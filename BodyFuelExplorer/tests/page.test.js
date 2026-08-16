@@ -365,3 +365,27 @@ test("responsive layouts preserve a real mobile anatomy row", () => {
     );
     assert.match(css, /\.routing-network \{\s*display: none;/);
 });
+
+
+test("tablet layouts keep controls and the live machine visible together", () => {
+    assert.match(
+        css,
+        /@media \(min-width: 651px\) and \(max-width: 1250px\)/
+    );
+    assert.match(
+        css,
+        /\.controls-panel \{[\s\S]*?grid-row: 1 \/ 3;[\s\S]*?overflow-y: auto;/
+    );
+    assert.match(
+        css,
+        /\.body-stage \{[\s\S]*?grid-column: 2;[\s\S]*?height: 100%;/
+    );
+    assert.match(
+        css,
+        /\.output-panel \{[\s\S]*?grid-column: 2;[\s\S]*?overflow-x: auto;/
+    );
+    assert.match(
+        css,
+        /\.routing-stage \.input-stack,[\s\S]*?\.routing-stage \.destination-stack \{\s*display: none;/
+    );
+});
