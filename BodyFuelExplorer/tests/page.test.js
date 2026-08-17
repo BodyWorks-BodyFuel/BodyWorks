@@ -36,11 +36,17 @@ test("the shared model loads before the interface script", () => {
         html.indexOf('<script src="model.js"></script>');
 
     const appPosition =
-        html.indexOf('<script src="app.js"></script>');
+        html.indexOf('<script src="app.js?v=20260816-2"></script>');
 
     assert.ok(modelPosition >= 0);
     assert.ok(appPosition >= 0);
     assert.ok(modelPosition < appPosition);
+});
+
+
+test("published interface assets carry a Safari cache version", () => {
+    assert.match(html, /href="style\.css\?v=20260816-2"/);
+    assert.match(html, /src="app\.js\?v=20260816-2"/);
 });
 
 
