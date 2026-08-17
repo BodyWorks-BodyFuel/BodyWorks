@@ -1700,6 +1700,21 @@ const bodyAnatomy =
 const ROUTE_VIEWBOX_WIDTH = 1000;
 const ROUTE_VIEWBOX_HEIGHT = 600;
 
+/*
+    These are landmarks in the anatomy artwork itself, not the larger CSS glow
+    regions layered above it. Keeping them in image-relative coordinates makes
+    the routes land on the same tissues in Safari, regardless of orientation.
+*/
+const BODY_ROUTE_POINTS = Object.freeze({
+    brain: { x: 0.50, y: 0.075 },
+    liver: { x: 0.445, y: 0.325 },
+    repair: { x: 0.585, y: 0.245 },
+    muscle: { x: 0.615, y: 0.59 },
+    glycogen: { x: 0.56, y: 0.375 },
+    storage: { x: 0.55, y: 0.47 },
+    pool: { x: 0.50, y: 0.405 }
+});
+
 let routeGeometryFrame = 0;
 
 
@@ -1746,6 +1761,23 @@ function routeElementAnchor(selector, edge = "center") {
     return clientPointToRouteSpace(
         clientX,
         rect.top + rect.height / 2
+    );
+}
+
+
+function bodyRoutePoint(name) {
+
+    const point =
+        BODY_ROUTE_POINTS[name];
+
+    if (!point || !bodyAnatomy) return null;
+
+    const rect =
+        bodyAnatomy.getBoundingClientRect();
+
+    return clientPointToRouteSpace(
+        rect.left + rect.width * point.x,
+        rect.top + rect.height * point.y
     );
 }
 
@@ -1819,14 +1851,6 @@ function updateRouteGeometry() {
 
     if (!networkRect.width || !networkRect.height) return;
 
-    const human =
-        document.querySelector(".human");
-
-    if (!human) return;
-
-    const humanRect =
-        human.getBoundingClientRect();
-
     const anchors = {
         proteinCard: routeElementAnchor(".route-protein", "right"),
         carbsCard: routeElementAnchor(".route-carbs", "right"),
@@ -1837,16 +1861,13 @@ function updateRouteGeometry() {
         repairCard: routeElementAnchor(".destination-repair", "left"),
         glycogenCard: routeElementAnchor(".destination-glycogen", "left"),
         storageCard: routeElementAnchor(".destination-storage", "left"),
-        brain: routeElementAnchor(".human .brain"),
-        liver: routeElementAnchor(".human .liver"),
-        muscle: routeElementAnchor(".human .leg-muscle-right"),
-        repair: routeElementAnchor(".human .repair"),
-        glycogen: routeElementAnchor(".human .glycogen-reserve"),
-        storage: routeElementAnchor(".human .fat-reserve"),
-        pool: clientPointToRouteSpace(
-            humanRect.left + humanRect.width / 2,
-            humanRect.top + humanRect.height * 0.42
-        )
+        brain: bodyRoutePoint("brain"),
+        liver: bodyRoutePoint("liver"),
+        muscle: bodyRoutePoint("muscle"),
+        repair: bodyRoutePoint("repair"),
+        glycogen: bodyRoutePoint("glycogen"),
+        storage: bodyRoutePoint("storage"),
+        pool: bodyRoutePoint("pool")
     };
 
     if (Object.values(anchors).some(anchor => !anchor)) return;
