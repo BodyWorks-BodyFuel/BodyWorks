@@ -386,6 +386,14 @@ test("tablet layouts keep controls and the live machine visible together", () =>
     );
     assert.match(
         css,
-        /\.routing-stage \.input-stack,[\s\S]*?\.routing-stage \.destination-stack \{\s*display: none;/
+        /\.routing-stage \.input-stack,[\s\S]*?\.routing-stage \.destination-stack \{[\s\S]*?display: flex;/
+    );
+    assert.match(
+        css,
+        /\.routing-stage \.input-stack \{[\s\S]*?width: clamp\(96px, 23%, 108px\);/
+    );
+    assert.match(
+        css,
+        /\.routing-stage \.destination-stack \{[\s\S]*?width: clamp\(116px, 29%, 136px\);/
     );
 });
