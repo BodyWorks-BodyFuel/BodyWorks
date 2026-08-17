@@ -351,12 +351,30 @@ test("route anchors follow the rendered cards and anatomical regions", () => {
     assert.match(app, /getBoundingClientRect\(\)/);
     assert.match(app, /routeElementAnchor\("\.route-protein", "right"\)/);
     assert.match(app, /routeElementAnchor\("\.destination-brain", "left"\)/);
-    assert.match(app, /routeElementAnchor\("\.human \.brain"\)/);
-    assert.match(app, /routeElementAnchor\("\.human \.liver"\)/);
-    assert.match(app, /routeElementAnchor\("\.human \.leg-muscle-right"\)/);
-    assert.match(app, /routeElementAnchor\("\.human \.glycogen-reserve"\)/);
-    assert.match(app, /routeElementAnchor\("\.human \.fat-reserve"\)/);
+    assert.match(app, /const BODY_ROUTE_POINTS = Object\.freeze/);
+    assert.match(app, /function bodyRoutePoint\(name\)/);
+    assert.match(app, /bodyRoutePoint\("brain"\)/);
+    assert.match(app, /bodyRoutePoint\("liver"\)/);
+    assert.match(app, /bodyRoutePoint\("muscle"\)/);
+    assert.match(app, /bodyRoutePoint\("glycogen"\)/);
+    assert.match(app, /bodyRoutePoint\("storage"\)/);
     assert.match(app, /new ResizeObserver\(scheduleRouteGeometryUpdate\)/);
+});
+
+
+test("short tablet landscapes keep hero status clear of motion controls", () => {
+    assert.match(
+        css,
+        /@media \(min-width: 651px\) and \(max-width: 1250px\) and \(max-height: 800px\)/
+    );
+    assert.match(css, /grid-template-columns: max-content minmax\(0, 1fr\)/);
+    assert.match(css, /\.stage-balance-summary \{\s*margin: 0;\s*white-space: nowrap;/);
+    assert.match(css, /\.motion-toggle \{\s*bottom: 48px;/);
+});
+
+
+test("tablet portraits keep the balance summary above the hero message", () => {
+    assert.match(css, /\.motion-toggle \{\s*bottom: 104px;\s*padding: 5px 9px;/);
 });
 
 
