@@ -2977,9 +2977,8 @@ input[type="range"]:focus-visible,
 
 /*
    Tablet live split: keep the machine in view while the control rail scrolls.
-   The detailed input and destination cards are already represented by the
-   controls and compact output tray, so the stage can concentrate on the body,
-   routes and current balance signal at iPad widths.
+   The routing cards stay visible as compact edge labels so an iPad still tells
+   the complete inputs -> body -> destinations story without crowding the hero.
 */
 @media (min-width: 651px) and (max-width: 1250px) {
 
@@ -3078,7 +3077,100 @@ input[type="range"]:focus-visible,
 
     .routing-stage .input-stack,
     .routing-stage .destination-stack {
+        position: absolute;
+        z-index: 16;
+        display: flex;
+        transform: none;
+    }
+
+    .routing-stage .input-stack {
+        top: 31%;
+        bottom: 30%;
+        left: 0;
+        width: clamp(96px, 23%, 108px);
+        justify-content: space-between;
+        gap: 0;
+    }
+
+    .routing-stage .destination-stack {
+        top: 19%;
+        right: 0;
+        bottom: 14%;
+        width: clamp(116px, 29%, 136px);
+        justify-content: space-between;
+        gap: 0;
+    }
+
+    .routing-stage .routing-kicker {
+        position: absolute;
+        bottom: calc(100% + 5px);
+        margin: 0;
+        font-size: 7px;
+        letter-spacing: 1.35px;
+    }
+
+    .routing-stage .route-card {
+        flex: 0 0 46px;
+        width: 100%;
+        min-height: 46px;
+        gap: 3px;
+        padding: 4px 3px 4px 6px;
+        border-radius: 8px;
+        box-shadow:
+            0 7px 14px rgba(0,0,0,.24),
+            inset 0 1px rgba(255,255,255,.04);
+    }
+
+    .routing-stage .route-card strong {
+        font-size: 8px;
+    }
+
+    .routing-stage .route-card small {
+        margin-top: 2px;
+        font-size: 7px;
+    }
+
+    .routing-stage .route-visual {
+        flex-basis: 28px;
+        width: 28px;
+        height: 28px;
+    }
+
+    .routing-stage .destination-card {
+        flex: 0 0 40px;
+        width: 100%;
+        min-height: 40px;
+        gap: 3px;
+        padding: 3px 4px;
+        border-radius: 7px;
+        box-shadow:
+            0 7px 14px rgba(0,0,0,.22),
+            inset 0 1px rgba(255,255,255,.04);
+    }
+
+    .routing-stage .destination-card.is-prioritized {
+        transform: translateX(-2px);
+    }
+
+    .routing-stage .destination-visual {
+        flex-basis: 24px;
+        width: 24px;
+        height: 24px;
+    }
+
+    .routing-stage .destination-card strong {
+        font-size: 7.5px;
+        line-height: 1.05;
+        text-overflow: clip;
+        white-space: normal;
+    }
+
+    .routing-stage .destination-card small {
         display: none;
+    }
+
+    .routing-stage .destination-card b {
+        font-size: 7.5px;
     }
 
     .routing-stage .body-container {
@@ -3088,9 +3180,9 @@ input[type="range"]:focus-visible,
     }
 
     .routing-stage .human {
-        width: min(72%, 260px);
-        height: min(100%, 520px);
-        transform: translateY(5px) scale(1.08);
+        width: min(47%, 210px);
+        height: min(100%, 420px);
+        transform: translateY(5px) scale(1.12);
     }
 
     .routing-stage .body-halo {
