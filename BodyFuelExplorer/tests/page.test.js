@@ -346,6 +346,20 @@ test("primary routes use layered luminous flow lanes", () => {
 });
 
 
+test("route anchors follow the rendered cards and anatomical regions", () => {
+    assert.match(app, /function updateRouteGeometry\(\)/);
+    assert.match(app, /getBoundingClientRect\(\)/);
+    assert.match(app, /routeElementAnchor\("\.route-protein", "right"\)/);
+    assert.match(app, /routeElementAnchor\("\.destination-brain", "left"\)/);
+    assert.match(app, /routeElementAnchor\("\.human \.brain"\)/);
+    assert.match(app, /routeElementAnchor\("\.human \.liver"\)/);
+    assert.match(app, /routeElementAnchor\("\.human \.leg-muscle-right"\)/);
+    assert.match(app, /routeElementAnchor\("\.human \.glycogen-reserve"\)/);
+    assert.match(app, /routeElementAnchor\("\.human \.fat-reserve"\)/);
+    assert.match(app, /new ResizeObserver\(scheduleRouteGeometryUpdate\)/);
+});
+
+
 test("the published project keeps an explicit ownership notice", () => {
     assert.match(html, /© 2026 Anthony Adams\. All rights reserved\./);
     assert.match(html, /class="site-footer"/);
