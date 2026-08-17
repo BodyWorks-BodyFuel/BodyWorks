@@ -588,6 +588,8 @@ function calculate() {
 
     persistExplorerSnapshot();
 
+    scheduleRouteGeometryUpdate();
+
 }
 
 
@@ -1682,6 +1684,374 @@ const routingNetwork =
 const bodyStage =
     document.querySelector(".body-stage");
 
+const routingStage =
+    document.querySelector(".routing-stage");
+
+const bodyAnatomy =
+    document.querySelector(".body-anatomy");
+
+
+/*
+    Route geometry follows the rendered interface instead of assuming one
+    desktop-sized canvas. This keeps every lane attached to its card and its
+    related anatomical region when the explorer changes size or orientation.
+*/
+
+const ROUTE_VIEWBOX_WIDTH = 1000;
+const ROUTE_VIEWBOX_HEIGHT = 600;
+
+let routeGeometryFrame = 0;
+
+
+function routeNumber(value) {
+    return Number(value.toFixed(1));
+}
+
+
+function clientPointToRouteSpace(clientX, clientY) {
+
+    const networkRect =
+        routingNetwork.getBoundingClientRect();
+
+    return {
+        x: routeNumber(
+            (clientX - networkRect.left) /
+            networkRect.width * ROUTE_VIEWBOX_WIDTH
+        ),
+        y: routeNumber(
+            (clientY - networkRect.top) /
+            networkRect.height * ROUTE_VIEWBOX_HEIGHT
+        )
+    };
+}
+
+
+function routeElementAnchor(selector, edge = "center") {
+
+    const element =
+        document.querySelector(selector);
+
+    if (!element) return null;
+
+    const rect =
+        element.getBoundingClientRect();
+
+    const clientX =
+        edge === "left"
+            ? rect.left
+            : edge === "right"
+                ? rect.right
+                : rect.left + rect.width / 2;
+
+    return clientPointToRouteSpace(
+        clientX,
+        rect.top + rect.height / 2
+    );
+}
+
+
+function horizontalRoute(from, to, firstPull = 0.42, secondPull = 0.30) {
+
+    const distance =
+        to.x - from.x;
+
+    return [
+        `M ${from.x} ${from.y}`,
+        `C ${routeNumber(from.x + distance * firstPull)} ${from.y},`,
+        `${routeNumber(to.x - distance * secondPull)} ${to.y},`,
+        `${to.x} ${to.y}`
+    ].join(" ");
+}
+
+
+function directRoute(from, to) {
+
+    const middleX =
+        routeNumber((from.x + to.x) / 2);
+
+    return [
+        `M ${from.x} ${from.y}`,
+        `C ${middleX} ${from.y},`,
+        `${middleX} ${to.y},`,
+        `${to.x} ${to.y}`
+    ].join(" ");
+}
+
+
+function setRoutePath(id, pathData) {
+
+    const path =
+        document.getElementById(id);
+
+    if (path) {
+        path.setAttribute("d", pathData);
+    }
+}
+
+
+function setRouteTerminal(routeName, point, terminalClass) {
+
+    const terminal =
+        document.querySelector(
+            `[data-route="${routeName}"] .${terminalClass}`
+        );
+
+    if (!terminal) return;
+
+    terminal.setAttribute("cx", point.x);
+    terminal.setAttribute("cy", point.y);
+}
+
+
+function setRouteNode(node, point) {
+
+    if (!node || !point) return;
+
+    node.setAttribute("cx", point.x);
+    node.setAttribute("cy", point.y);
+}
+
+
+function updateRouteGeometry() {
+
+    const networkRect =
+        routingNetwork.getBoundingClientRect();
+
+    if (!networkRect.width || !networkRect.height) return;
+
+    const human =
+        document.querySelector(".human");
+
+    if (!human) return;
+
+    const humanRect =
+        human.getBoundingClientRect();
+
+    const anchors = {
+        proteinCard: routeElementAnchor(".route-protein", "right"),
+        carbsCard: routeElementAnchor(".route-carbs", "right"),
+        fatCard: routeElementAnchor(".route-fat", "right"),
+        brainCard: routeElementAnchor(".destination-brain", "left"),
+        liverCard: routeElementAnchor(".destination-liver", "left"),
+        muscleCard: routeElementAnchor(".destination-muscle", "left"),
+        repairCard: routeElementAnchor(".destination-repair", "left"),
+        glycogenCard: routeElementAnchor(".destination-glycogen", "left"),
+        storageCard: routeElementAnchor(".destination-storage", "left"),
+        brain: routeElementAnchor(".human .brain"),
+        liver: routeElementAnchor(".human .liver"),
+        muscle: routeElementAnchor(".human .leg-muscle-right"),
+        repair: routeElementAnchor(".human .repair"),
+        glycogen: routeElementAnchor(".human .glycogen-reserve"),
+        storage: routeElementAnchor(".human .fat-reserve"),
+        pool: clientPointToRouteSpace(
+            humanRect.left + humanRect.width / 2,
+            humanRect.top + humanRect.height * 0.42
+        )
+    };
+
+    if (Object.values(anchors).some(anchor => !anchor)) return;
+
+    setRoutePath(
+        "routeProteinIn",
+        horizontalRoute(anchors.proteinCard, anchors.pool)
+    );
+    setRoutePath(
+        "routeCarbsIn",
+        horizontalRoute(anchors.carbsCard, anchors.pool)
+    );
+    setRoutePath(
+        "routeFatIn",
+        horizontalRoute(anchors.fatCard, anchors.liver, 0.48, 0.26)
+    );
+
+    setRoutePath(
+        "routeBrainOut",
+        horizontalRoute(anchors.brain, anchors.brainCard, 0.38, 0.34)
+    );
+    setRoutePath(
+        "routeLiverOut",
+        horizontalRoute(anchors.liver, anchors.liverCard, 0.36, 0.30)
+    );
+    setRoutePath(
+        "routeMuscleOut",
+        horizontalRoute(anchors.muscle, anchors.muscleCard, 0.32, 0.28)
+    );
+    setRoutePath(
+        "routeRepairOut",
+        horizontalRoute(anchors.repair, anchors.repairCard, 0.34, 0.28)
+    );
+    setRoutePath(
+        "routeGlycogenOut",
+        horizontalRoute(anchors.glycogen, anchors.glycogenCard, 0.36, 0.28)
+    );
+    setRoutePath(
+        "routeStorageOut",
+        horizontalRoute(anchors.storage, anchors.storageCard, 0.38, 0.26)
+    );
+
+    const releaseToStorage =
+        horizontalRoute(anchors.storageCard, anchors.storage, 0.34, 0.28);
+
+    const storageToPool =
+        directRoute(anchors.storage, anchors.pool)
+            .replace(/^M [^C]+/, "");
+
+    setRoutePath(
+        "routeStoredRelease",
+        `${releaseToStorage} ${storageToPool}`
+    );
+
+    const sourceTerminals = {
+        protein: anchors.proteinCard,
+        carbs: anchors.carbsCard,
+        fat: anchors.fatCard
+    };
+
+    Object.entries(sourceTerminals).forEach(([name, point]) => {
+        setRouteTerminal(name, point, "route-terminal-source");
+    });
+
+    const targetTerminals = {
+        fuel: anchors.brainCard,
+        fatUse: anchors.liverCard,
+        muscle: anchors.muscleCard,
+        repair: anchors.repairCard,
+        glycogen: anchors.glycogenCard,
+        storage: anchors.storageCard
+    };
+
+    Object.entries(targetTerminals).forEach(([name, point]) => {
+        setRouteTerminal(name, point, "route-terminal-target");
+    });
+
+    const spine =
+        document.querySelector(".circulation-spine");
+
+    if (spine) {
+        const brainToPool =
+            directRoute(anchors.brain, anchors.pool);
+        const poolToMuscle =
+            directRoute(anchors.pool, anchors.muscle)
+                .replace(/^M [^C]+/, "");
+
+        spine.setAttribute("d", `${brainToPool} ${poolToMuscle}`);
+    }
+
+    const crosslinks =
+        [...document.querySelectorAll(".circulation-crosslink")];
+
+    [
+        [anchors.pool, anchors.liver],
+        [anchors.pool, anchors.repair],
+        [anchors.pool, anchors.storage],
+        [anchors.storage, anchors.glycogen]
+    ].forEach(([from, to], index) => {
+        if (crosslinks[index]) {
+            crosslinks[index].setAttribute("d", directRoute(from, to));
+        }
+    });
+
+    [
+        document.querySelector(".circulation-core-ring"),
+        document.querySelector(".circulation-core")
+    ].forEach(core => setRouteNode(core, anchors.pool));
+
+    const circulationNodes =
+        [...document.querySelectorAll(".circulation-node")];
+
+    [
+        anchors.brain,
+        anchors.liver,
+        anchors.repair,
+        anchors.storage,
+        anchors.glycogen,
+        anchors.muscle
+    ].forEach((point, index) => {
+        setRouteNode(circulationNodes[index], point);
+    });
+
+    const shareRoutes = {
+        protein: [
+            [anchors.pool, anchors.repair]
+        ],
+        carbs: [
+            [anchors.pool, anchors.brain],
+            [anchors.pool, anchors.glycogen],
+            [anchors.pool, anchors.muscle]
+        ],
+        fat: [
+            [anchors.liver, anchors.pool],
+            [anchors.liver, anchors.storage]
+        ]
+    };
+
+    Object.entries(shareRoutes).forEach(([name, routes]) => {
+        const paths = [
+            ...document.querySelectorAll(
+                `.channel-${name} .route-share`
+            )
+        ];
+
+        routes.forEach(([from, to], index) => {
+            if (paths[index]) {
+                paths[index].setAttribute("d", directRoute(from, to));
+            }
+        });
+    });
+
+    const releaseLabel =
+        document.querySelector(".release-label");
+
+    if (releaseLabel) {
+        releaseLabel.setAttribute(
+            "x",
+            routeNumber((anchors.storage.x + anchors.storageCard.x) / 2)
+        );
+        releaseLabel.setAttribute(
+            "y",
+            routeNumber(Math.max(anchors.storage.y, anchors.storageCard.y) + 24)
+        );
+        releaseLabel.setAttribute("text-anchor", "middle");
+    }
+}
+
+
+function scheduleRouteGeometryUpdate() {
+
+    window.cancelAnimationFrame(routeGeometryFrame);
+
+    routeGeometryFrame =
+        window.requestAnimationFrame(updateRouteGeometry);
+}
+
+
+window.addEventListener("resize", scheduleRouteGeometryUpdate);
+
+if (window.ResizeObserver) {
+    const routingResizeObserver =
+        new ResizeObserver(scheduleRouteGeometryUpdate);
+
+    routingResizeObserver.observe(routingStage);
+}
+
+document
+    .querySelectorAll(".destination-card")
+    .forEach(card => {
+        card.addEventListener("transitionend", event => {
+            if (event.propertyName === "transform") {
+                scheduleRouteGeometryUpdate();
+            }
+        });
+    });
+
+if (bodyAnatomy && !bodyAnatomy.complete) {
+    bodyAnatomy.addEventListener(
+        "load",
+        scheduleRouteGeometryUpdate,
+        { once: true }
+    );
+}
+
 const motionToggle =
     document.getElementById("motionToggle");
 
@@ -1890,6 +2260,7 @@ welcomeDialog.addEventListener("click", event => {
 
 updateWeightUnitAccessibility();
 calculate();
+scheduleRouteGeometryUpdate();
 
 window.requestAnimationFrame(() => {
     if (!hasSeenWelcome()) {
