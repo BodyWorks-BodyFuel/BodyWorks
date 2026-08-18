@@ -48,7 +48,7 @@ test("the visual guide is fully local and all of its resources exist", () => {
 
     references
         .filter(reference => !reference.startsWith("#"))
-        .map(reference => reference.split("#")[0])
+        .map(reference => reference.split(/[?#]/)[0])
         .filter(Boolean)
         .forEach(reference => {
             assert.equal(
@@ -200,9 +200,9 @@ test("goal direction explains higher, maintaining and lower targets without pred
     assert.match(learnHtml, /<output id="directionTarget">190<\/output>/);
     assert.match(learnHtml, /Direction only:[\s\S]*does not predict how much weight changes/i);
 
-    assert.match(learnApp, /higher:[\s\S]*Toward target[\s\S]*Leans higher toward 190/);
-    assert.match(learnApp, /maintain:[\s\S]*Maintaining[\s\S]*staying near 185/);
-    assert.match(learnApp, /lower:[\s\S]*Toward target[\s\S]*Leans lower toward 179/);
+    assert.match(learnApp, /higher:[\s\S]*Scenario points toward target[\s\S]*Leans higher toward 190/);
+    assert.match(learnApp, /maintain:[\s\S]*Scenario near modeled balance[\s\S]*near modeled demand/);
+    assert.match(learnApp, /lower:[\s\S]*Scenario points toward target[\s\S]*Leans lower toward 179/);
 });
 
 

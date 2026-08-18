@@ -72,7 +72,39 @@ test("4 / 4 / 9 calorie relationship remains exact", () => {
 });
 
 
-test("well-matched preset remains the calibrated baseline", () => {
+test("Everyday Baseline exactly matches the Everyday Movement reference", () => {
+    const preset =
+        presets.everyday;
+
+    const state =
+        model.calculateBodyState(preset);
+
+    assert.deepEqual(preset, {
+        protein: 134,
+        carbs: 246,
+        fats: 70,
+        activity: 1,
+        time: 0
+    });
+    assert.equal(state.calories, 2150);
+    assert.equal(state.energyDemand, 2150);
+    assert.equal(state.balance, 0);
+
+    const resetMix = model.redistributeMacros({
+        target: 2150,
+        macros: preset
+    });
+
+    assert.deepEqual(resetMix.macros, {
+        protein: 134,
+        carbs: 246,
+        fats: 70
+    });
+    assert.equal(resetMix.constrained, false);
+});
+
+
+test("Well-Matched Active remains a calibrated separate example", () => {
     const state =
         model.calculateBodyState(presets.matched);
 
@@ -502,105 +534,66 @@ test("impossible locked budgets are explicit rather than silently drifting", () 
 });
 
 
-test("goal proposals point fuel and activity in the intended direction", () => {
-    const gain = model.proposeGoalSettings({
-        current: 150,
-        target: 180,
-        unit: "lb"
-    });
+test("weight context does not alter fuel, demand or routing calculations", () => {
+    const scenario = model.presets.everyday;
 
-    const loss = model.proposeGoalSettings({
-        current: 180,
-        target: 150,
-        unit: "lb"
-    });
-
-    const maintain = model.proposeGoalSettings({
-        current: 150,
-        target: 150,
-        unit: "lb"
-    });
-
-    assert.deepEqual(gain, {
-        valid: true,
-        direction: 1,
-        activity: 1,
-        calorieTarget: 2365
-    });
-
-    assert.deepEqual(loss, {
-        valid: true,
-        direction: -1,
-        activity: 3,
-        calorieTarget: 2700
-    });
-
-    assert.deepEqual(maintain, {
-        valid: true,
-        direction: 0,
-        activity: 2,
-        calorieTarget: 2320
-    });
-});
-
-
-test("goal direction remains equivalent when weights switch units", () => {
-    const pounds = model.proposeGoalSettings({
-        current: 150,
-        target: 180,
-        unit: "lb"
-    });
-
-    const kilograms = model.proposeGoalSettings({
-        current: 68.0388,
-        target: 81.6466,
-        unit: "kg"
-    });
-
-    assert.deepEqual(kilograms, pounds);
+    assert.deepEqual(
+        model.calculateBodyState({
+            ...scenario,
+            current: 150,
+            target: 180,
+            unit: "lb"
+        }),
+        model.calculateBodyState(scenario)
+    );
 });
 
 
 test("trajectory states agree with goal and supply direction", () => {
-    assert.equal(
+    assert.deepEqual(
         model.calculateTrajectory({
             current: Number.NaN,
             target: Number.NaN,
             balance: 0,
             time: 2
-        }).state,
-        "setup"
+        }),
+        {
+            state: "setup",
+            label: "Add weights to see direction",
+            icon: "○",
+            supplyPhrase: "near"
+        }
     );
 
-    assert.equal(
-        model.calculateTrajectory({
-            current: 150,
-            target: 180,
-            balance: 300,
-            time: 2
-        }).state,
-        "toward"
-    );
+    const toward = model.calculateTrajectory({
+        current: 150,
+        target: 180,
+        balance: 300,
+        time: 2
+    });
 
-    assert.equal(
-        model.calculateTrajectory({
-            current: 150,
-            target: 180,
-            balance: -300,
-            time: 2
-        }).state,
-        "away"
-    );
+    assert.equal(toward.state, "toward");
+    assert.equal(toward.label, "Scenario points toward target");
 
-    assert.equal(
-        model.calculateTrajectory({
-            current: 150,
-            target: 150,
-            balance: 0,
-            time: 2
-        }).state,
-        "maintaining"
-    );
+    const away = model.calculateTrajectory({
+        current: 150,
+        target: 180,
+        balance: -300,
+        time: 2
+    });
+
+    assert.equal(away.state, "away");
+    assert.equal(away.label, "Scenario points away from target");
+
+    const near = model.calculateTrajectory({
+        current: 180,
+        target: 150,
+        balance: 0,
+        time: 0
+    });
+
+    assert.equal(near.state, "maintaining");
+    assert.equal(near.label, "Scenario near modeled balance");
 });
 
 

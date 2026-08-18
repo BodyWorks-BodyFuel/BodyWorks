@@ -33,10 +33,10 @@ const copyrightNotice = fs.readFileSync(
 
 test("the shared model loads before the interface script", () => {
     const modelPosition =
-        html.indexOf('<script src="model.js"></script>');
+        html.indexOf('<script src="model.js?v=20260817-1"></script>');
 
     const appPosition =
-        html.indexOf('<script src="app.js?v=20260816-2"></script>');
+        html.indexOf('<script src="app.js?v=20260817-2"></script>');
 
     assert.ok(modelPosition >= 0);
     assert.ok(appPosition >= 0);
@@ -46,7 +46,8 @@ test("the shared model loads before the interface script", () => {
 
 test("published interface assets carry a Safari cache version", () => {
     assert.match(html, /href="style\.css\?v=20260816-2"/);
-    assert.match(html, /src="app\.js\?v=20260816-2"/);
+    assert.match(html, /src="model\.js\?v=20260817-1"/);
+    assert.match(html, /src="app\.js\?v=20260817-2"/);
 });
 
 
@@ -110,6 +111,73 @@ test("every model preset has one matching interface button", () => {
 });
 
 
+test("Everyday Baseline is the complete neutral initial and reset state", () => {
+    const expectedInputs = {
+        calorieTarget: "2150",
+        protein: "134",
+        carbs: "246",
+        fats: "70",
+        activity: "1",
+        time: "0"
+    };
+
+    Object.entries(expectedInputs).forEach(([id, value]) => {
+        const input = html.match(
+            new RegExp(`<input(?=[^>]*\\bid="${id}")[^>]*>`)
+        );
+
+        assert.ok(input, `Missing ${id} input`);
+        assert.match(input[0], new RegExp(`value="${value}"`));
+    });
+
+    assert.match(
+        html,
+        /data-preset="everyday" class="preset active" aria-pressed="true"/
+    );
+    assert.match(
+        html,
+        /data-preset="matched" class="preset" aria-pressed="false"/
+    );
+    assert.match(html, /Everyday Baseline model example loaded/);
+    assert.match(html, /not personalized recommendations/);
+    assert.match(html, /id="activityLabel">Everyday Movement</);
+    assert.match(html, /id="timeLabel">Today</);
+    assert.match(html, /Model reference: ≈ 2,150 kcal\/day/);
+
+    const state =
+        model.calculateBodyState(model.presets.everyday);
+
+    [
+        ["fuel", state.availableFuel],
+        ["glycogen", state.glycogen],
+        ["repair", state.repair],
+        ["muscle", state.muscleDemand],
+        ["fatUse", state.fatUse],
+        ["storage", state.storage]
+    ].forEach(([id, value]) => {
+        const rounded = Math.round(value);
+
+        assert.match(
+            html,
+            new RegExp(`id="${id}Output"[^>]*>${rounded}%`)
+        );
+        assert.match(
+            html,
+            new RegExp(
+                `id="destination${id.charAt(0).toUpperCase()}${id.slice(1)}Value">${rounded}%`
+            )
+        );
+    });
+
+    assert.match(app, /calorieTarget: 2150/);
+    assert.match(app, /version: 3/);
+    assert.match(
+        app,
+        /applyPreset\("everyday", \{ clearGoals: true \}\)/
+    );
+});
+
+
 test("the Approximate Fuel In readout is sourced from the master target", () => {
     const displayFunction = app.match(
         /function updateCalorieTargetDisplay\(\) \{[\s\S]*?\n\}/
@@ -125,27 +193,45 @@ test("the Approximate Fuel In readout is sourced from the master target", () => 
 });
 
 
-test("manual planner actions cancel a pending goal proposal", () => {
+test("weight fields update trajectory context without mutating the scenario", () => {
+    const weightListenerStart = app.indexOf(
+        "/* Weights provide goal context only"
+    );
+
+    const weightListenerEnd = app.indexOf(
+        "plannerElements.weightUnit.addEventListener",
+        weightListenerStart
+    );
+
+    const weightListeners = app.slice(
+        weightListenerStart,
+        weightListenerEnd
+    );
+
+    assert.ok(weightListenerStart >= 0);
+    assert.ok(weightListenerEnd > weightListenerStart);
     assert.match(
-        app,
-        /function cancelGoalPlanTimer\(\) \{[\s\S]*?goalPlanTimer = null;[\s\S]*?\}/
+        weightListeners,
+        /input\.addEventListener\("input", calculate\)/
     );
 
-    const presetFunction = app.match(
-        /function applyPreset\(name, options = \{\}\) \{[\s\S]*?\n\}/
-    );
+    [
+        "clearActivePreset",
+        "redistributeMacros",
+        "controls.activity",
+        "controls.time",
+        "planner.calorieTarget",
+        "setTimeout"
+    ].forEach(mutation => {
+        assert.doesNotMatch(
+            weightListeners,
+            new RegExp(mutation.replace(".", "\\."))
+        );
+    });
 
-    assert.ok(presetFunction, "Missing preset function");
-    assert.match(presetFunction[0], /cancelGoalPlanTimer\(\)/);
-
-    const manualActionCancellations = [
-        ...app.matchAll(/cancelGoalPlanTimer\(\);/g)
-    ];
-
-    assert.ok(
-        manualActionCancellations.length >= 9,
-        "Every manual planner path should cancel a delayed goal proposal"
-    );
+    assert.doesNotMatch(app, /proposeGoalSettings|proposeFuelForGoal/);
+    assert.match(html, /they do not adjust activity, calories, macros or duration/);
+    assert.match(app, /version: 3/);
 });
 
 
@@ -173,7 +259,7 @@ test("the interface exposes four understandable activity profiles", () => {
         ["Rest", "Everyday", "Active", "High"]
     );
     assert.match(html, /id="activityDemandValue"/);
-    assert.match(html, /Model reference: ≈ 2,320 kcal\/day/);
+    assert.match(html, /Model reference: ≈ 2,150 kcal\/day/);
     assert.match(html, /not estimates of personal calorie burn/);
 });
 
@@ -190,6 +276,10 @@ test("the first-visit invitation is concise, persistent and reopenable", () => {
     assert.match(html, /id="welcomeOpenButton">Start Here/);
     assert.match(html, /id="welcomeExploreButton">Start Exploring/);
     assert.match(html, /learn\.html\?from=explorer#machine/);
+    assert.match(
+        html,
+        /I ate this and moved like this today—how might the model conceptually route that fuel\?/
+    );
     assert.equal(
         [...html.matchAll(/class="welcome-step-number"/g)].length,
         3
