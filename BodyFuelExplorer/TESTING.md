@@ -12,10 +12,15 @@ npm test
 ```
 
 The suite covers calorie arithmetic, slider limits, macro redistribution,
-every lock combination, repeated macro movement, goal direction, trajectory,
+every lock combination, repeated macro movement, weight-context isolation, trajectory,
 the four activity profiles, the four viewing horizons, presets, output bounds,
 routing values, local page resources, companion-guide anchors and interactions,
-and delayed goal-planner state safety.
+and preset/manual scenario state safety.
+
+On a clean load, the selected model example should be **Everyday Baseline**:
+2,150 kcal from 134 g protein, 246 g carbohydrate and 70 g fat, paired with
+Everyday Movement and Today. These are model reference values, not a personal
+recommendation. Reset should restore this complete state and clear both weights.
 
 ## Safari debugging
 
@@ -36,10 +41,17 @@ from Rest through High. The visible model reference should step from about
 1,800 to 3,000 kcal/day, and the stage should move from supply above demand to
 demand above supply at the High profile.
 
-For the goal-planner timing check, type a target weight and immediately move a
-macro or choose a preset before the short proposal delay completes. The newer
-manual choice should remain in place rather than being replaced by the pending
-goal proposal.
+For the weight-context check, select each preset—including Everyday Baseline—and
+enter current and target weights in higher, lower and equal directions. Only the
+trajectory comparison should change: the preset selection, fuel, macros,
+activity and Pattern Duration must remain untouched. Clear either weight and
+confirm the trajectory returns to setup without changing the scenario. Repeat
+after manually changing each slider.
+
+When fuel is near modeled demand, the trajectory should say **Scenario near
+modeled balance**, even when the entered target is lower or higher. Directional
+scenarios should say **Scenario points toward target** or **Scenario points away
+from target** without claiming a personal outcome.
 
 ## Responsive layout check
 

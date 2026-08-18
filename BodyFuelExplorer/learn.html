@@ -351,7 +351,7 @@
                         <span>150</span><i>→</i><span>180</span>
                     </div>
                     <h3>Current + Target Weight</h3>
-                    <p>Establishes a direction for a starting scenario—not a promised weight or arrival date.</p>
+                    <p>Compares the selected example or manual scenario with a target direction; it does not personalize fuel or demand values.</p>
                 </article>
 
                 <article class="control-learn-card" id="approximate-fuel-in">
@@ -425,7 +425,7 @@
                                 <span><small>Demand</small><i></i></span>
                             </div>
                             <small class="balance-state">BELOW DEMAND</small>
-                            <strong id="belowResult">Away from target</strong>
+                            <strong id="belowResult">Scenario points away from target</strong>
                             <p id="belowDetail">Leans lower than 179</p>
                         </article>
 
@@ -435,8 +435,8 @@
                                 <span><small>Demand</small><i></i></span>
                             </div>
                             <small class="balance-state">NEAR DEMAND</small>
-                            <strong id="nearResult">Holding pattern</strong>
-                            <p id="nearDetail">Leans toward staying near 179</p>
+                            <strong id="nearResult">Scenario near modeled balance</strong>
+                            <p id="nearDetail">Supply remains near modeled demand</p>
                         </article>
 
                         <article class="balance-example balance-above" data-tone="toward">
@@ -445,7 +445,7 @@
                                 <span><small>Demand</small><i></i></span>
                             </div>
                             <small class="balance-state">ABOVE DEMAND</small>
-                            <strong id="aboveResult">Toward target</strong>
+                            <strong id="aboveResult">Scenario points toward target</strong>
                             <p id="aboveDetail">Leans higher toward 190</p>
                         </article>
                     </div>
@@ -483,7 +483,7 @@
 
 </div>
 
-<script src="learn.js"></script>
+<script src="learn.js?v=20260817-1"></script>
 
 </body>
 </html>

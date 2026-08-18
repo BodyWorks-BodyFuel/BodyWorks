@@ -49,17 +49,17 @@ const directionExamples = {
         results: {
             below: {
                 tone: "away",
-                label: "Away from target",
+                label: "Scenario points away from target",
                 detail: "Leans lower than 179"
             },
             near: {
                 tone: "hold",
-                label: "Holding pattern",
-                detail: "Leans toward staying near 179"
+                label: "Scenario near modeled balance",
+                detail: "Supply remains near modeled demand"
             },
             above: {
                 tone: "toward",
-                label: "Toward target",
+                label: "Scenario points toward target",
                 detail: "Leans higher toward 190"
             }
         }
@@ -69,21 +69,21 @@ const directionExamples = {
         target: "185",
         arrow: "→",
         summary:
-            "For a similar target, supply near demand supports the intended holding pattern.",
+            "For a similar target, supply near demand keeps the scenario near modeled balance.",
         results: {
             below: {
                 tone: "away",
-                label: "Leans lower",
+                label: "Scenario points away from target",
                 detail: "Moves away from 185"
             },
             near: {
                 tone: "toward",
-                label: "Maintaining",
-                detail: "Leans toward staying near 185"
+                label: "Scenario near modeled balance",
+                detail: "Supply remains near modeled demand"
             },
             above: {
                 tone: "away",
-                label: "Leans higher",
+                label: "Scenario points away from target",
                 detail: "Moves away from 185"
             }
         }
@@ -97,17 +97,17 @@ const directionExamples = {
         results: {
             below: {
                 tone: "toward",
-                label: "Toward target",
+                label: "Scenario points toward target",
                 detail: "Leans lower toward 179"
             },
             near: {
                 tone: "hold",
-                label: "Holding pattern",
-                detail: "Leans toward staying near 190"
+                label: "Scenario near modeled balance",
+                detail: "Supply remains near modeled demand"
             },
             above: {
                 tone: "away",
-                label: "Away from target",
+                label: "Scenario points away from target",
                 detail: "Leans higher than 190"
             }
         }

@@ -100,6 +100,13 @@
         ]);
 
         const presets = Object.freeze({
+            everyday: Object.freeze({
+                protein: 134,
+                carbs: 246,
+                fats: 70,
+                activity: 1,
+                time: 0
+            }),
             matched: Object.freeze({
                 protein: 150,
                 carbs: 250,
@@ -579,63 +586,6 @@
         }
 
 
-        function proposeGoalSettings({
-            current,
-            target,
-            unit = "lb",
-            calorieMin = 800,
-            calorieMax = 4500
-        }) {
-            if (
-                !Number.isFinite(current) ||
-                !Number.isFinite(target) ||
-                current <= 0 ||
-                target <= 0
-            ) {
-                return { valid: false };
-            }
-
-            const weightTolerance =
-                unit === "kg" ? 0.25 : 0.5;
-
-            const difference =
-                target - current;
-
-            const direction =
-                Math.abs(difference) <= weightTolerance
-                    ? 0
-                    : Math.sign(difference);
-
-            const activity =
-                direction > 0
-                    ? 1
-                    : direction < 0
-                        ? 3
-                        : 2;
-
-            const demand =
-                modeledEnergyDemand(activity);
-
-            const directionalTarget =
-                direction === 0
-                    ? demand
-                    : demand * (1 + direction * 0.10);
-
-            return {
-                valid: true,
-                direction,
-                activity,
-                calorieTarget: Math.round(
-                    clamp(
-                        directionalTarget,
-                        calorieMin,
-                        calorieMax
-                    )
-                )
-            };
-        }
-
-
         function calculateTrajectory({
             current,
             target,
@@ -680,22 +630,22 @@
                     : Math.sign(effectiveBalance);
 
             let state = "maintaining";
-            let label = "Maintaining";
+            let label = "Scenario near modeled balance";
             let icon = "≈";
 
             if (goalDirection === 0) {
                 if (supplyDirection !== 0) {
                     state = "away";
-                    label = "Moving away from target";
+                    label = "Scenario points away from target";
                     icon = "↗";
                 }
             } else if (supplyDirection === goalDirection) {
                 state = "toward";
-                label = "Moving toward target";
+                label = "Scenario points toward target";
                 icon = "→";
             } else if (supplyDirection !== 0) {
                 state = "away";
-                label = "Moving away from target";
+                label = "Scenario points away from target";
                 icon = "↗";
             }
 
@@ -897,7 +847,6 @@
             outputTone,
             redistributeMacros,
             calculateBodyState,
-            proposeGoalSettings,
             calculateTrajectory,
             calculateRouteSignals,
             flowPresentation

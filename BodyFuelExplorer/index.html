@@ -37,7 +37,11 @@
         <div class="presets" role="group" aria-label="Example fuel and demand scenarios">
             <span class="preset-label">Presets</span>
 
-            <button type="button" data-preset="matched" class="preset active" aria-pressed="true">
+            <button type="button" data-preset="everyday" class="preset active" aria-pressed="true">
+                Everyday Baseline
+            </button>
+
+            <button type="button" data-preset="matched" class="preset" aria-pressed="false">
                 Well-Matched Active
             </button>
 
@@ -61,7 +65,7 @@
                 Over-Supplied
             </button>
 
-            <button type="button" class="reset-button" id="resetButton" aria-label="Reset the planner and controls to the well-matched active preset">
+            <button type="button" class="reset-button" id="resetButton" aria-label="Reset the planner and controls to the Everyday Baseline model example">
                 ↻ Reset
             </button>
         </div>
@@ -82,8 +86,8 @@
                 <div class="goal-planner">
                     <div class="planner-heading">
                         <span class="label-with-info">
-                            <strong>Body Goal / Fuel Planning</strong>
-                            <button type="button" class="info-button" aria-label="About body goal and fuel planning" data-learn-target="goal-direction" data-tooltip-title="Body goal / fuel planning" data-tooltip="Current and target weight establish a direction for this conceptual model. Once both are entered, the explorer gently adjusts activity and proposes calorie and macro inputs that point toward that direction. It is not a personal prescription or a prediction of future weight or timing.">i</button>
+                            <strong>Body Goal Context</strong>
+                            <button type="button" class="info-button" aria-label="About body goal context" data-learn-target="goal-direction" data-tooltip-title="Body goal context" data-tooltip="Current and target weight establish direction only. They compare the selected example or manual scenario with that direction; they do not adjust activity, calories, macros or duration, and they do not create a personalized recommendation or predict timing.">i</button>
                         </span>
                         <span>Optional context</span>
                     </div>
@@ -113,7 +117,7 @@
                         <span>
                             <small>Trajectory</small>
                             <strong id="trajectoryLabel">Add weights to see direction</strong>
-                            <em id="trajectoryDetail">Enter both weights to generate a directional starting plan.</em>
+                            <em id="trajectoryDetail">Enter both weights to compare this scenario with a target direction.</em>
                         </span>
                     </div>
                 </div>
@@ -124,7 +128,7 @@
                             <label for="calorieTarget">Approximate Fuel In</label>
                             <button type="button" class="info-button" aria-label="About approximate fuel in" data-learn-target="approximate-fuel-in" data-tooltip-title="Approximate fuel in" data-tooltip="This calorie budget uses the 4 / 4 / 9 relationship: protein provides about 4 kcal per gram, carbohydrates 4 kcal per gram and fat 9 kcal per gram. It is an educational estimate, not a personal prescription.">i</button>
                         </span>
-                        <strong><span id="calories">2,320</span> kcal</strong>
+                        <strong><span id="calories">2,150</span> kcal</strong>
                     </div>
 
                     <input
@@ -133,8 +137,8 @@
                         min="800"
                         max="4500"
                         step="1"
-                        value="2320"
-                        aria-valuetext="2,320 kilocalories"
+                        value="2150"
+                        aria-valuetext="2,150 kilocalories"
                     >
 
                     <div class="starting-balance">
@@ -145,7 +149,7 @@
                         <button type="button" id="resetMixButton" aria-label="Reset unlocked macros to the proposed starting balance">Reset Mix</button>
                     </div>
 
-                    <p class="calorie-status" id="calorieStatus" role="status" aria-atomic="true">Move the calorie target or reset unlocked macros to the proposed starting balance.</p>
+                    <p class="calorie-status" id="calorieStatus" role="status" aria-atomic="true">Everyday Baseline model example loaded. Its fuel and demand values are not personalized recommendations.</p>
                 </div>
 
                 <div class="control protein">
@@ -155,8 +159,8 @@
                             <button type="button" class="info-button" aria-label="About protein input" data-learn-target="protein" data-tooltip-title="Protein input" data-tooltip="Supports tissue maintenance and rebuilding in this model. Protein-rich examples include eggs, fish, meat, dairy, tofu, tempeh and legumes. Foods usually contain more than one macronutrient; this does not predict muscle gain.">i</button>
                         </span>
                         <span class="macro-value">
-                            <strong><span id="proteinValue">150</span> g</strong>
-                            <button type="button" class="macro-lock" data-macro="protein" aria-pressed="false" aria-label="Protein lock at 150 grams">
+                            <strong><span id="proteinValue">134</span> g</strong>
+                            <button type="button" class="macro-lock" data-macro="protein" aria-pressed="false" aria-label="Protein lock at 134 grams">
                                 <span class="lock-symbol" aria-hidden="true"></span>
                                 <span class="lock-label">Lock</span>
                             </button>
@@ -168,8 +172,8 @@
                         type="range"
                         min="40"
                         max="250"
-                        value="150"
-                        aria-valuetext="150 grams"
+                        value="134"
+                        aria-valuetext="134 grams"
                     >
                 </div>
 
@@ -180,8 +184,8 @@
                             <button type="button" class="info-button" aria-label="About carbohydrate input" data-learn-target="carbohydrates" data-tooltip-title="Carbohydrate input" data-tooltip="Commonly supports readily available energy and glycogen stores. Examples include grains, fruit, beans, potatoes and other starchy vegetables. Foods usually contain more than one macronutrient.">i</button>
                         </span>
                         <span class="macro-value">
-                            <strong><span id="carbsValue">250</span> g</strong>
-                            <button type="button" class="macro-lock" data-macro="carbs" aria-pressed="false" aria-label="Carbohydrates lock at 250 grams">
+                            <strong><span id="carbsValue">246</span> g</strong>
+                            <button type="button" class="macro-lock" data-macro="carbs" aria-pressed="false" aria-label="Carbohydrates lock at 246 grams">
                                 <span class="lock-symbol" aria-hidden="true"></span>
                                 <span class="lock-label">Lock</span>
                             </button>
@@ -193,8 +197,8 @@
                         type="range"
                         min="40"
                         max="500"
-                        value="250"
-                        aria-valuetext="250 grams"
+                        value="246"
+                        aria-valuetext="246 grams"
                     >
                 </div>
 
@@ -205,8 +209,8 @@
                             <button type="button" class="info-button" aria-label="About fat input" data-learn-target="fats" data-tooltip-title="Fat input" data-tooltip="Provides concentrated energy and contributes to the modeled fuel mix. Examples include oils, nuts, seeds, avocado, olives and fatty fish. Foods usually contain more than one macronutrient; dietary fat is not the same as body-fat storage.">i</button>
                         </span>
                         <span class="macro-value">
-                            <strong><span id="fatsValue">80</span> g</strong>
-                            <button type="button" class="macro-lock" data-macro="fats" aria-pressed="false" aria-label="Fats lock at 80 grams">
+                            <strong><span id="fatsValue">70</span> g</strong>
+                            <button type="button" class="macro-lock" data-macro="fats" aria-pressed="false" aria-label="Fats lock at 70 grams">
                                 <span class="lock-symbol" aria-hidden="true"></span>
                                 <span class="lock-label">Lock</span>
                             </button>
@@ -218,8 +222,8 @@
                         type="range"
                         min="20"
                         max="180"
-                        value="80"
-                        aria-valuetext="80 grams"
+                        value="70"
+                        aria-valuetext="70 grams"
                     >
                 </div>
 
@@ -238,7 +242,7 @@
                             <label for="activity">Activity pattern</label>
                             <button type="button" class="info-button" aria-label="About activity demand" data-learn-target="activity-demand" data-tooltip-title="Activity pattern" data-tooltip="Select a reference type of day. Each profile gives the model a transparent fuel-demand anchor and changes routing toward working tissue. These anchors do not use your weight and are not estimates of personal calorie burn or exercise calories.">i</button>
                         </span>
-                        <strong id="activityLabel">Active / Training</strong>
+                        <strong id="activityLabel">Everyday Movement</strong>
                     </div>
 
                     <input
@@ -247,24 +251,24 @@
                         min="0"
                         max="3"
                         step="1"
-                        value="2"
-                        aria-valuetext="Active / Training, model reference approximately 2,320 kilocalories per day"
+                        value="1"
+                        aria-valuetext="Everyday Movement, model reference approximately 2,150 kilocalories per day"
                         aria-describedby="activityDemandValue activityDescription"
                     >
 
                     <div class="activity-scale" aria-hidden="true">
                         <span data-activity="0">Rest</span>
-                        <span data-activity="1">Everyday</span>
-                        <span data-activity="2" class="is-active">Active</span>
+                        <span data-activity="1" class="is-active">Everyday</span>
+                        <span data-activity="2">Active</span>
                         <span data-activity="3">High</span>
                     </div>
 
                     <p class="activity-reference" id="activityDemandValue">
-                        Model reference: ≈ 2,320 kcal/day
+                        Model reference: ≈ 2,150 kcal/day
                     </p>
 
                     <p class="activity-description" id="activityDescription">
-                        A workout or physically active day with sustained demand from working tissue.
+                        Normal walking, errands and everyday movement without prolonged training.
                     </p>
                 </div>
 
@@ -283,7 +287,7 @@
                             <label for="time">Pattern duration</label>
                             <button type="button" class="info-button" aria-label="About the viewing horizon" data-learn-target="viewing-horizon" data-tooltip-title="Viewing horizon" data-tooltip="Select how long to imagine the current daily fuel and activity pattern repeating. Longer views make sustained repair, storage or stored-fuel use more visible. This changes the model's perspective; it does not advance time, set a deadline or predict an outcome.">i</button>
                         </span>
-                        <strong id="timeLabel">Weeks</strong>
+                        <strong id="timeLabel">Today</strong>
                     </div>
 
                     <input
@@ -292,20 +296,20 @@
                         min="0"
                         max="3"
                         step="1"
-                        value="2"
-                        aria-valuetext="Weeks"
+                        value="0"
+                        aria-valuetext="Today"
                         aria-describedby="horizonDescription"
                     >
 
                     <div class="horizon-scale" aria-hidden="true">
-                        <span data-horizon="0">Today</span>
+                        <span data-horizon="0" class="is-active">Today</span>
                         <span data-horizon="1">Days</span>
-                        <span data-horizon="2" class="is-active">Weeks</span>
+                        <span data-horizon="2">Weeks</span>
                         <span data-horizon="3">Months</span>
                     </div>
 
                     <p class="horizon-description" id="horizonDescription">
-                        Showing how repeated inputs and demand can strengthen patterns across several weeks.
+                        Emphasizing immediate routing from today's inputs and activity demand.
                     </p>
                 </div>
             </section>
@@ -512,7 +516,7 @@
                     <article class="route-card route-protein">
                         <div>
                             <strong>Protein</strong>
-                            <small><span id="stageProteinValue">150</span> g supplied</small>
+                            <small><span id="stageProteinValue">134</span> g supplied</small>
                         </div>
                         <img class="route-visual" src="assets/icons/biology/input-protein.png" width="512" height="512" alt="" draggable="false">
                     </article>
@@ -520,7 +524,7 @@
                     <article class="route-card route-carbs">
                         <div>
                             <strong>Carbohydrates</strong>
-                            <small><span id="stageCarbsValue">250</span> g supplied</small>
+                            <small><span id="stageCarbsValue">246</span> g supplied</small>
                         </div>
                         <img class="route-visual" src="assets/icons/biology/input-carbohydrates.png" width="512" height="512" alt="" draggable="false">
                     </article>
@@ -528,7 +532,7 @@
                     <article class="route-card route-fat">
                         <div>
                             <strong>Fats</strong>
-                            <small><span id="stageFatsValue">80</span> g supplied</small>
+                            <small><span id="stageFatsValue">70</span> g supplied</small>
                         </div>
                         <img class="route-visual" src="assets/icons/biology/input-fats.png" width="512" height="512" alt="" draggable="false">
                     </article>
@@ -568,7 +572,7 @@
                             <strong>Brain Fuel</strong>
                             <small>Continuous priority</small>
                         </div>
-                        <b id="destinationFuelValue">74%</b>
+                        <b id="destinationFuelValue">63%</b>
                     </article>
 
                     <article class="destination-card destination-liver">
@@ -577,7 +581,7 @@
                             <strong>Liver Processing</strong>
                             <small>Convert · store · release</small>
                         </div>
-                        <b id="destinationFatUseValue">52%</b>
+                        <b id="destinationFatUseValue">51%</b>
                     </article>
 
                     <article class="destination-card destination-muscle">
@@ -586,7 +590,7 @@
                             <strong>Working Muscles</strong>
                             <small>Immediate performance</small>
                         </div>
-                        <b id="destinationMuscleValue">75%</b>
+                        <b id="destinationMuscleValue">45%</b>
                     </article>
 
                     <article class="destination-card destination-repair">
@@ -595,7 +599,7 @@
                             <strong>Repair / Rebuilding</strong>
                             <small>Tissue maintenance</small>
                         </div>
-                        <b id="destinationRepairValue">61%</b>
+                        <b id="destinationRepairValue">55%</b>
                     </article>
 
                     <article class="destination-card destination-glycogen">
@@ -604,7 +608,7 @@
                             <strong>Glycogen Storage</strong>
                             <small>Muscle and liver stores</small>
                         </div>
-                        <b id="destinationGlycogenValue">68%</b>
+                        <b id="destinationGlycogenValue">48%</b>
                     </article>
 
                     <article class="destination-card destination-storage">
@@ -613,7 +617,7 @@
                             <strong>Fat Storage</strong>
                             <small>Longer-term reserve</small>
                         </div>
-                        <b id="destinationStorageValue">31%</b>
+                        <b id="destinationStorageValue">29%</b>
                     </article>
                 </div>
             </div>
@@ -623,8 +627,8 @@
                 <span class="stage-balance-summary" id="balanceSummary">Supply near demand</span>
                 <strong id="stateTitle">Fuel matches demand</strong>
                 <p id="stateDescription">
-                    The system has enough incoming fuel to support activity,
-                    repair and normal storage.
+                    Incoming energy supports activity, repair, organ function and
+                    normal storage while the system continuously adjusts.
                 </p>
             </div>
 
@@ -651,14 +655,14 @@
             <article class="output-card" style="--gauge-color: #4fa8ff" aria-labelledby="fuelOutputName">
                 <div class="output-copy">
                     <span class="output-name" id="fuelOutputName"><span class="output-symbol output-symbol-fuel" aria-hidden="true">◈</span>Fuel Pool <button type="button" class="info-button" aria-label="About fuel pool output" data-learn-target="fuel-pool" data-tooltip-title="Fuel Pool" data-tooltip="A simplified indicator of readily available circulating energy after current activity demand. It is comparative within this explorer, not a measured blood value.">i</button></span>
-                    <output class="output-value" id="fuelOutput" for="protein carbs fats activity time" aria-live="off">74%</output>
+                    <output class="output-value" id="fuelOutput" for="protein carbs fats activity time" aria-live="off">63%</output>
                     <em id="fuelStatus">Good</em>
                     <small>Readily available energy</small>
                 </div>
                 <div class="gauge" aria-hidden="true">
                     <svg viewBox="0 0 140 78">
                         <path class="gauge-track" d="M 12 68 A 58 58 0 0 1 128 68"></path>
-                        <path id="fuelGauge" class="gauge-value" pathLength="100" stroke-dasharray="74 100" d="M 12 68 A 58 58 0 0 1 128 68"></path>
+                        <path id="fuelGauge" class="gauge-value" pathLength="100" stroke-dasharray="63 100" d="M 12 68 A 58 58 0 0 1 128 68"></path>
                         <line id="fuelNeedle" class="gauge-needle" x1="70" y1="68" x2="70" y2="31"></line>
                         <circle class="gauge-hub" cx="70" cy="68" r="4"></circle>
                     </svg>
@@ -668,14 +672,14 @@
             <article class="output-card" style="--gauge-color: #62e69a" aria-labelledby="glycogenOutputName">
                 <div class="output-copy">
                     <span class="output-name" id="glycogenOutputName"><img class="output-symbol" src="assets/icons/biology/destination-glycogen.png" width="512" height="512" alt="">Glycogen <button type="button" class="info-button" aria-label="About glycogen output" data-learn-target="glycogen" data-tooltip-title="Glycogen" data-tooltip="Relative carbohydrate-derived support for conceptual muscle and liver stores. It does not estimate your actual glycogen concentration.">i</button></span>
-                    <output class="output-value" id="glycogenOutput" for="protein carbs fats activity time" aria-live="off">68%</output>
-                    <em id="glycogenStatus">High</em>
+                    <output class="output-value" id="glycogenOutput" for="protein carbs fats activity time" aria-live="off">48%</output>
+                    <em id="glycogenStatus">Moderate</em>
                     <small>Muscle and liver stores</small>
                 </div>
                 <div class="gauge" aria-hidden="true">
                     <svg viewBox="0 0 140 78">
                         <path class="gauge-track" d="M 12 68 A 58 58 0 0 1 128 68"></path>
-                        <path id="glycogenGauge" class="gauge-value" pathLength="100" stroke-dasharray="68 100" d="M 12 68 A 58 58 0 0 1 128 68"></path>
+                        <path id="glycogenGauge" class="gauge-value" pathLength="100" stroke-dasharray="48 100" d="M 12 68 A 58 58 0 0 1 128 68"></path>
                         <line id="glycogenNeedle" class="gauge-needle" x1="70" y1="68" x2="70" y2="31"></line>
                         <circle class="gauge-hub" cx="70" cy="68" r="4"></circle>
                     </svg>
@@ -685,14 +689,14 @@
             <article class="output-card" style="--gauge-color: #a67cff" aria-labelledby="repairOutputName">
                 <div class="output-copy">
                     <span class="output-name" id="repairOutputName"><img class="output-symbol" src="assets/icons/biology/destination-repair.png" width="512" height="512" alt="">Repair / Rebuilding <button type="button" class="info-button" aria-label="About repair and rebuilding output" data-learn-target="repair" data-tooltip-title="Repair / rebuilding" data-tooltip="A derived tissue-support signal shaped by activity demand, protein supply, available fuel and repeated time. It is not a readiness score or prediction of muscle gain or recovery time.">i</button></span>
-                    <output class="output-value" id="repairOutput" for="protein carbs fats activity time" aria-live="off">61%</output>
+                    <output class="output-value" id="repairOutput" for="protein carbs fats activity time" aria-live="off">55%</output>
                     <em id="repairStatus">High</em>
                     <small>Derived tissue-support signal</small>
                 </div>
                 <div class="gauge" aria-hidden="true">
                     <svg viewBox="0 0 140 78">
                         <path class="gauge-track" d="M 12 68 A 58 58 0 0 1 128 68"></path>
-                        <path id="repairGauge" class="gauge-value" pathLength="100" stroke-dasharray="61 100" d="M 12 68 A 58 58 0 0 1 128 68"></path>
+                        <path id="repairGauge" class="gauge-value" pathLength="100" stroke-dasharray="55 100" d="M 12 68 A 58 58 0 0 1 128 68"></path>
                         <line id="repairNeedle" class="gauge-needle" x1="70" y1="68" x2="70" y2="31"></line>
                         <circle class="gauge-hub" cx="70" cy="68" r="4"></circle>
                     </svg>
@@ -702,14 +706,14 @@
             <article class="output-card" style="--gauge-color: #ff665b" aria-labelledby="muscleOutputName">
                 <div class="output-copy">
                     <span class="output-name" id="muscleOutputName"><img class="output-symbol" src="assets/icons/biology/destination-muscle.png" width="512" height="512" alt="">Muscle Demand <button type="button" class="info-button" aria-label="About muscle demand output" data-learn-target="working-muscles" data-tooltip-title="Muscle Demand" data-tooltip="The relative activity stress being placed on working muscle. Higher demand raises immediate fuel routing and can draw down stored resources.">i</button></span>
-                    <output class="output-value" id="muscleOutput" for="protein carbs fats activity time" aria-live="off">75%</output>
-                    <em id="muscleStatus">Very High</em>
+                    <output class="output-value" id="muscleOutput" for="protein carbs fats activity time" aria-live="off">45%</output>
+                    <em id="muscleStatus">Moderate</em>
                     <small>Current activity stress</small>
                 </div>
                 <div class="gauge" aria-hidden="true">
                     <svg viewBox="0 0 140 78">
                         <path class="gauge-track" d="M 12 68 A 58 58 0 0 1 128 68"></path>
-                        <path id="muscleGauge" class="gauge-value" pathLength="100" stroke-dasharray="75 100" d="M 12 68 A 58 58 0 0 1 128 68"></path>
+                        <path id="muscleGauge" class="gauge-value" pathLength="100" stroke-dasharray="45 100" d="M 12 68 A 58 58 0 0 1 128 68"></path>
                         <line id="muscleNeedle" class="gauge-needle" x1="70" y1="68" x2="70" y2="31"></line>
                         <circle class="gauge-hub" cx="70" cy="68" r="4"></circle>
                     </svg>
@@ -719,14 +723,14 @@
             <article class="output-card" style="--gauge-color: #ff8b66" aria-labelledby="fatUseOutputName">
                 <div class="output-copy">
                     <span class="output-name" id="fatUseOutputName"><img class="output-symbol" src="assets/icons/biology/input-fats.png" width="512" height="512" alt="">Fat Use <button type="button" class="info-button" aria-label="About fat use output" data-learn-target="fats" data-tooltip-title="Fat Use" data-tooltip="The relative contribution of fat to the modeled fuel mix. Its status color indicates intensity, not whether fat use is good or bad. It describes routing tendency—not measured fat oxidation or predicted fat loss.">i</button></span>
-                    <output class="output-value" id="fatUseOutput" for="protein carbs fats activity time" aria-live="off">52%</output>
+                    <output class="output-value" id="fatUseOutput" for="protein carbs fats activity time" aria-live="off">51%</output>
                     <em id="fatUseStatus">Moderate</em>
                     <small>Reserve fuel contribution</small>
                 </div>
                 <div class="gauge" aria-hidden="true">
                     <svg viewBox="0 0 140 78">
                         <path class="gauge-track" d="M 12 68 A 58 58 0 0 1 128 68"></path>
-                        <path id="fatUseGauge" class="gauge-value" pathLength="100" stroke-dasharray="52 100" d="M 12 68 A 58 58 0 0 1 128 68"></path>
+                        <path id="fatUseGauge" class="gauge-value" pathLength="100" stroke-dasharray="51 100" d="M 12 68 A 58 58 0 0 1 128 68"></path>
                         <line id="fatUseNeedle" class="gauge-needle" x1="70" y1="68" x2="70" y2="31"></line>
                         <circle class="gauge-hub" cx="70" cy="68" r="4"></circle>
                     </svg>
@@ -736,14 +740,14 @@
             <article class="output-card" style="--gauge-color: #ffad42" aria-labelledby="storageOutputName">
                 <div class="output-copy">
                     <span class="output-name" id="storageOutputName"><img class="output-symbol" src="assets/icons/biology/destination-fat-storage.png" width="512" height="512" alt="">Fat Storage <button type="button" class="info-button" aria-label="About fat storage output" data-learn-target="fat-storage" data-tooltip-title="Fat Storage" data-tooltip="Pressure to route surplus energy toward longer-term reserves as supply, demand and repeated time interact. It does not predict weight change.">i</button></span>
-                    <output class="output-value" id="storageOutput" for="protein carbs fats activity time" aria-live="off">31%</output>
+                    <output class="output-value" id="storageOutput" for="protein carbs fats activity time" aria-live="off">29%</output>
                     <em id="storageStatus">Moderate</em>
                     <small>Energy reserve pressure</small>
                 </div>
                 <div class="gauge" aria-hidden="true">
                     <svg viewBox="0 0 140 78">
                         <path class="gauge-track" d="M 12 68 A 58 58 0 0 1 128 68"></path>
-                        <path id="storageGauge" class="gauge-value" pathLength="100" stroke-dasharray="31 100" d="M 12 68 A 58 58 0 0 1 128 68"></path>
+                        <path id="storageGauge" class="gauge-value" pathLength="100" stroke-dasharray="29 100" d="M 12 68 A 58 58 0 0 1 128 68"></path>
                         <line id="storageNeedle" class="gauge-needle" x1="70" y1="68" x2="70" y2="31"></line>
                         <circle class="gauge-hub" cx="70" cy="68" r="4"></circle>
                     </svg>
@@ -781,7 +785,7 @@
             <div class="welcome-copy">
                 <span class="welcome-kicker">One machine. Your experiment.</span>
                 <h2 id="welcomeTitle">Change the inputs. Watch the body change its priorities.</h2>
-                <p id="welcomeIntro">Move fuel, activity and time controls. The routes, stores and tissue signals respond together.</p>
+                <p id="welcomeIntro">I ate this and moved like this today—how might the model conceptually route that fuel?</p>
 
                 <div class="welcome-actions">
                     <button type="button" class="welcome-primary" id="welcomeExploreButton">Start Exploring</button>
@@ -824,8 +828,8 @@
     </div>
 </dialog>
 
-<script src="model.js"></script>
-<script src="app.js?v=20260816-2"></script>
+<script src="model.js?v=20260817-1"></script>
+<script src="app.js?v=20260817-2"></script>
 
 </body>
 </html>

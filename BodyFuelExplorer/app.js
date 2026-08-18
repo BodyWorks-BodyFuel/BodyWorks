@@ -18,7 +18,6 @@ const {
     macroCalories: calculateMacroCalories,
     redistributeMacros: redistributeMacroValues,
     calculateBodyState,
-    proposeGoalSettings,
     calculateTrajectory,
     calculateRouteSignals,
     flowPresentation,
@@ -49,7 +48,7 @@ const plannerElements = {
 };
 
 const planner = {
-    calorieTarget: 2320,
+    calorieTarget: 2150,
     weightUnit: "lb",
     locks: {
         protein: false,
@@ -58,7 +57,6 @@ const planner = {
     }
 };
 
-let goalPlanTimer = null;
 const explorerHistoryKey = "bodyFuelExplorer";
 
 
@@ -68,7 +66,7 @@ function createExplorerSnapshot() {
         document.querySelector(".preset.active")?.dataset.preset || null;
 
     return {
-        version: 1,
+        version: 3,
         calorieTarget: Number(planner.calorieTarget),
         weightUnit: planner.weightUnit,
         currentWeight: plannerElements.currentWeight.value,
@@ -133,7 +131,7 @@ function restoreExplorerSnapshot() {
     const snapshot =
         history.state?.[explorerHistoryKey];
 
-    if (!snapshot || snapshot.version !== 1) {
+    if (!snapshot || snapshot.version !== 3) {
         return null;
     }
 
@@ -219,12 +217,6 @@ function restoreExplorerSnapshot() {
     updateCalorieTargetDisplay();
 
     return snapshot;
-}
-
-
-function cancelGoalPlanTimer() {
-    window.clearTimeout(goalPlanTimer);
-    goalPlanTimer = null;
 }
 
 
@@ -414,77 +406,6 @@ function clearMacroLocks() {
 }
 
 
-function goalWeights() {
-    const current =
-        Number(plannerElements.currentWeight.value);
-
-    const target =
-        Number(plannerElements.targetWeight.value);
-
-    if (
-        !Number.isFinite(current) ||
-        !Number.isFinite(target) ||
-        current <= 0 ||
-        target <= 0
-    ) {
-        return null;
-    }
-
-    return { current, target };
-}
-
-
-function proposeFuelForGoal() {
-    const weights =
-        goalWeights();
-
-    if (!weights) return false;
-
-    const proposal = proposeGoalSettings({
-        ...weights,
-        unit: planner.weightUnit,
-        calorieMin: Number(plannerElements.calorieTarget.min),
-        calorieMax: Number(plannerElements.calorieTarget.max)
-    });
-
-    const {
-        direction,
-        activity: proposedActivity,
-        calorieTarget: requestedTarget
-    } = proposal;
-
-    controls.activity.value =
-        proposedActivity;
-
-    clearActivePreset();
-
-    const result =
-        redistributeMacros(requestedTarget);
-
-    const directionLabel =
-        direction > 0
-            ? "above"
-            : direction < 0
-                ? "below"
-                : "near";
-
-    if (result.constrained) {
-        setCalorieStatus(
-            `Goal direction proposed, but locks or macro limits set the closest available mix at ${result.actualCalories.toLocaleString()} kcal.`,
-            true
-        );
-    } else {
-        setCalorieStatus(
-            `Directional starting plan: activity shifts to ${getActivityProfile(proposedActivity).label}, and fuel sits modestly ${directionLabel} modeled demand.`
-        );
-    }
-
-    calculate();
-
-    return true;
-}
-
-
 function updateTrajectory(balance, time) {
     const currentWeight =
         Number(plannerElements.currentWeight.value);
@@ -511,7 +432,7 @@ function updateTrajectory(balance, time) {
             "Add weights to see direction";
 
         plannerElements.trajectoryDetail.textContent =
-            "Enter both weights to generate a directional starting plan.";
+            "Enter both weights to compare this scenario with a target direction.";
 
         return;
     }
@@ -526,7 +447,7 @@ function updateTrajectory(balance, time) {
         trajectory.label;
 
     plannerElements.trajectoryDetail.textContent =
-        `Fuel supply is ${trajectory.supplyPhrase} modeled demand ${getHorizonPeriod(time).phrase}.`;
+        `This scenario's fuel supply is ${trajectory.supplyPhrase} modeled demand ${getHorizonPeriod(time).phrase}.`;
 }
 
 
@@ -1109,8 +1030,6 @@ function applyPreset(name, options = {}) {
     const clearGoals =
         options.clearGoals === true;
 
-    cancelGoalPlanTimer();
-
     clearMacroLocks();
 
     Object.keys(preset).forEach(key => {
@@ -1150,8 +1069,8 @@ function applyPreset(name, options = {}) {
 
     setCalorieStatus(
         clearGoals
-            ? "Planner reset. Move the calorie target or reset the mix to the proposed starting balance."
-            : "Preset fuel mix loaded. Locks were cleared so the full preset can be shown."
+            ? "Explorer reset to the Everyday Baseline model example. Its fuel and demand values are not personalized recommendations."
+            : `${selectedPreset.textContent.trim()} example loaded. Locks were cleared so the full preset can be shown.`
     );
 
 
@@ -1167,7 +1086,6 @@ macroKeys.forEach(key => {
     controls[key].addEventListener(
         "input",
         () => {
-            cancelGoalPlanTimer();
             clearActivePreset();
 
             const requestedTarget =
@@ -1198,8 +1116,14 @@ macroKeys.forEach(key => {
         controls[key].addEventListener(
             "input",
             () => {
-                cancelGoalPlanTimer();
                 clearActivePreset();
+
+                setCalorieStatus(
+                    key === "activity"
+                        ? "Manual scenario: activity changed; fuel and duration remain as shown."
+                        : "Manual scenario: duration changed; fuel and activity remain as shown."
+                );
+
                 calculate();
             }
         );
@@ -1209,7 +1133,6 @@ macroKeys.forEach(key => {
 plannerElements.calorieTarget.addEventListener(
     "input",
     () => {
-        cancelGoalPlanTimer();
         clearActivePreset();
 
         const requestedTarget =
@@ -1237,7 +1160,6 @@ plannerElements.calorieTarget.addEventListener(
 plannerElements.resetMixButton.addEventListener(
     "click",
     () => {
-        cancelGoalPlanTimer();
         clearActivePreset();
 
         const result =
@@ -1265,7 +1187,6 @@ document
         button.addEventListener(
             "click",
             () => {
-                cancelGoalPlanTimer();
                 const key =
                     button.dataset.macro;
 
@@ -1302,33 +1223,18 @@ document
     });
 
 
+/* Weights provide goal context only; scenario controls retain their explicit source. */
 [
     plannerElements.currentWeight,
     plannerElements.targetWeight
 ].forEach(input => {
-    input.addEventListener("input", () => {
-        calculate();
-
-        cancelGoalPlanTimer();
-
-        goalPlanTimer = window.setTimeout(
-            proposeFuelForGoal,
-            400
-        );
-    });
-
-    input.addEventListener("change", () => {
-        cancelGoalPlanTimer();
-        proposeFuelForGoal();
-    });
+    input.addEventListener("input", calculate);
 });
 
 
 plannerElements.weightUnit.addEventListener(
     "change",
     () => {
-        cancelGoalPlanTimer();
-
         const nextUnit =
             plannerElements.weightUnit.value;
 
@@ -1388,7 +1294,7 @@ document
 document
     .getElementById("resetButton")
     .addEventListener("click", () => {
-        applyPreset("matched", { clearGoals: true });
+        applyPreset("everyday", { clearGoals: true });
     });
 
 
