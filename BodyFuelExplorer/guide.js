@@ -648,11 +648,13 @@
                 dockObserver.observe(elements.coach);
             }
 
-            browserRoot.setTimeout(() => {
+            const offerInvitation = () => {
                 if (!readPreference() && !doc.querySelector("dialog[open]")) {
                     elements.invitation.hidden = false;
                 }
-            }, 550);
+            };
+            browserRoot.addEventListener("bodyfuel:intro-closed", offerInvitation);
+            browserRoot.setTimeout(offerInvitation, 550);
 
             const controller = Object.freeze({
                 machine,

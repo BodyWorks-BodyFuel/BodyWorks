@@ -22,12 +22,13 @@ test("core dependencies load in stable layer order", () => {
         "explanations.js?v=20260819-2",
         "app.js?v=20260819-6",
         "guide-scenarios.js?v=20260819-1",
-        "guide.js?v=20260819-4"
+        "guide.js?v=20260819-4",
+        "intro.js?v=20260820-1"
     ];
     const positions = sources.map(source => html.indexOf(`src="${source}"`));
     positions.forEach(position => assert.ok(position >= 0));
     assert.deepEqual([...positions].sort((a, b) => a - b), positions);
-    assert.match(html, /href="style\.css\?v=20260819-34"/);
+    assert.match(html, /href="style\.css\?v=20260820-1"/);
 });
 
 

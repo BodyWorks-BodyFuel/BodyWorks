@@ -12,7 +12,7 @@
     <meta name="copyright" content="Copyright © 2026 Anthony Adams. All rights reserved.">
     <title>Body Fuel Flow Explorer</title>
     <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="style.css?v=20260819-34">
+    <link rel="stylesheet" href="style.css?v=20260820-1">
 </head>
 
 <body class="core-mode">
@@ -34,9 +34,14 @@
             </div>
         </div>
 
-        <button type="button" class="guide-replay" id="guideReplayButton">
-            Show me how this works
-        </button>
+        <div class="topbar-actions">
+            <button type="button" class="intro-reopen" id="introReopenButton">
+                Understanding the Explorer
+            </button>
+            <button type="button" class="guide-replay" id="guideReplayButton">
+                Show me how this works
+            </button>
+        </div>
 
     </header>
 
@@ -808,6 +813,52 @@
 
 </div>
 
+<dialog class="explorer-intro" id="explorerIntro" aria-labelledby="explorerIntroTitle" aria-describedby="explorerIntroLead">
+    <div class="explorer-intro-panel">
+        <span class="explorer-intro-kicker">A different way to look at nutrition</span>
+        <h2 id="explorerIntroTitle">Understanding the Explorer</h2>
+        <p class="explorer-intro-lead" id="explorerIntroLead">
+            See food as resources entering a living system—not simply numbers on a page.
+        </p>
+
+        <div class="explorer-intro-sections">
+            <section class="explorer-intro-card explorer-intro-card-primary" aria-labelledby="introWhatTitle">
+                <span class="explorer-intro-number" aria-hidden="true">01</span>
+                <h3 id="introWhatTitle">What is this?</h3>
+                <p>Your body constantly routes food, stored energy, and recovery resources against what you ask it to do.</p>
+                <p>The Body Fuel Explorer makes that internal process visible. Change the inputs, demand, or time—and watch the same system respond.</p>
+            </section>
+
+            <section class="explorer-intro-card" aria-labelledby="introDifferentTitle">
+                <span class="explorer-intro-number" aria-hidden="true">02</span>
+                <h3 id="introDifferentTitle">Start with a different question</h3>
+                <p>Instead of beginning with “What diet should I follow?”, begin here:</p>
+                <p class="explorer-intro-question">What is the body trying to do with what I give it?</p>
+                <p>Brain activity, movement, repair, storage, and ongoing biological work all compete for available resources.</p>
+            </section>
+
+            <section class="explorer-intro-card" aria-labelledby="introUsefulTitle">
+                <span class="explorer-intro-number" aria-hidden="true">03</span>
+                <h3 id="introUsefulTitle">What could this help you explore?</h3>
+                <ul>
+                    <li>How activity changes fuel use.</li>
+                    <li>Enough energy, too little, or more than current demand.</li>
+                    <li>Why protein, carbohydrates, and fat have different jobs.</li>
+                    <li>Why repeated patterns matter more than one meal.</li>
+                    <li>Body goals without turning nutrition into pass or fail.</li>
+                </ul>
+            </section>
+        </div>
+
+        <div class="explorer-intro-closeout">
+            <p><strong>You don't need to find the perfect setting.</strong> Explore the machine.</p>
+            <button type="button" class="explorer-intro-enter" id="introEnterButton">Enter the Explorer</button>
+        </div>
+
+        <p class="explorer-intro-caveat">A conceptual educational model—not a diet prescription, medical advice, or prediction of an individual outcome.</p>
+    </div>
+</dialog>
+
 <aside class="guide-invitation" id="guideInvitation" role="region" aria-labelledby="guideInvitationTitle" hidden>
     <p id="guideInvitationTitle">Want a 90-second guided example?</p>
     <div class="guide-invitation-actions">
@@ -912,6 +963,7 @@
 <script src="app.js?v=20260819-6"></script>
 <script src="guide-scenarios.js?v=20260819-1"></script>
 <script src="guide.js?v=20260819-4"></script>
+<script src="intro.js?v=20260820-1"></script>
 
 </body>
 </html>

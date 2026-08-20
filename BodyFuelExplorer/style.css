@@ -6946,6 +6946,269 @@ body.core-mode .food-tile-wrap {
 }
 
 
+/* First-visit purpose statement. Isolated from the working Explorer beneath it. */
+.topbar-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.intro-reopen {
+    min-height: 44px;
+    padding: 8px 10px;
+    border: 0;
+    color: #91adba;
+    background: transparent;
+    font: 700 13px/1.25 inherit;
+    cursor: pointer;
+}
+
+.intro-reopen:hover {
+    color: #e1f5fb;
+}
+
+.intro-reopen:focus-visible,
+.explorer-intro button:focus-visible {
+    outline: 3px solid #90dcf7;
+    outline-offset: 3px;
+}
+
+.explorer-intro {
+    width: min(1120px, calc(100vw - 32px));
+    max-width: none;
+    max-height: calc(100dvh - 32px);
+    margin: auto;
+    padding: 0;
+    overflow: auto;
+    border: 1px solid rgba(100, 202, 237, .34);
+    border-radius: 22px;
+    color: #eaf7fb;
+    background:
+        radial-gradient(circle at 72% 12%, rgba(63, 173, 218, .13), transparent 34%),
+        linear-gradient(145deg, rgba(13, 38, 53, .99), rgba(4, 18, 29, .995));
+    box-shadow: 0 30px 100px rgba(0, 0, 0, .68), 0 0 70px rgba(48, 165, 211, .09);
+}
+
+.explorer-intro::backdrop {
+    background: rgba(1, 8, 14, .84);
+    backdrop-filter: blur(11px) saturate(.76);
+}
+
+.explorer-intro-panel {
+    padding: clamp(24px, 4vw, 54px);
+}
+
+.explorer-intro-kicker {
+    display: block;
+    margin-bottom: 9px;
+    color: #65ccef;
+    font-size: 12px;
+    font-weight: 850;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+}
+
+.explorer-intro h2 {
+    max-width: 760px;
+    margin: 0;
+    color: #f4fcff;
+    font-size: clamp(34px, 5vw, 62px);
+    line-height: 1.02;
+    letter-spacing: -.035em;
+}
+
+.explorer-intro-lead {
+    max-width: 720px;
+    margin: 15px 0 30px;
+    color: #b8d0da;
+    font-size: clamp(17px, 2vw, 21px);
+    line-height: 1.48;
+}
+
+.explorer-intro-sections {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.explorer-intro-card {
+    position: relative;
+    min-width: 0;
+    padding: 22px;
+    overflow: hidden;
+    border: 1px solid rgba(128, 193, 216, .17);
+    border-radius: 15px;
+    background: rgba(11, 35, 49, .72);
+}
+
+.explorer-intro-card-primary {
+    border-color: rgba(94, 203, 240, .3);
+    background: linear-gradient(145deg, rgba(18, 61, 79, .84), rgba(10, 33, 47, .72));
+}
+
+.explorer-intro-number {
+    display: block;
+    margin-bottom: 22px;
+    color: #55c5eb;
+    font-size: 12px;
+    font-weight: 850;
+    letter-spacing: .16em;
+}
+
+.explorer-intro-card h3 {
+    margin: 0 0 12px;
+    color: #eefbff;
+    font-size: 20px;
+    line-height: 1.18;
+}
+
+.explorer-intro-card p,
+.explorer-intro-card li {
+    color: #b7cbd4;
+    font-size: 15px;
+    line-height: 1.48;
+}
+
+.explorer-intro-card p {
+    margin: 0 0 10px;
+}
+
+.explorer-intro-card p:last-child {
+    margin-bottom: 0;
+}
+
+.explorer-intro-card .explorer-intro-question {
+    color: #f0fbff;
+    font-size: 17px;
+    font-weight: 790;
+}
+
+.explorer-intro-card ul {
+    display: grid;
+    gap: 7px;
+    margin: 0;
+    padding-left: 19px;
+}
+
+.explorer-intro-card li::marker {
+    color: #5bc9ee;
+}
+
+.explorer-intro-closeout {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 22px;
+    margin-top: 18px;
+    padding: 20px 22px;
+    border: 1px solid rgba(102, 201, 233, .2);
+    border-radius: 15px;
+    background: rgba(5, 24, 36, .72);
+}
+
+.explorer-intro-closeout p {
+    margin: 0;
+    color: #bcd2db;
+    font-size: 17px;
+    line-height: 1.4;
+}
+
+.explorer-intro-closeout strong {
+    color: #f1fbff;
+}
+
+.explorer-intro-enter {
+    flex: 0 0 auto;
+    min-height: 50px;
+    padding: 12px 22px;
+    border: 1px solid rgba(126, 225, 255, .68);
+    border-radius: 10px;
+    color: #f7fdff;
+    background: linear-gradient(180deg, #2385aa, #15617e);
+    box-shadow: 0 8px 24px rgba(28, 135, 177, .24);
+    font: 820 16px/1.2 inherit;
+    cursor: pointer;
+}
+
+.explorer-intro-enter:hover {
+    background: linear-gradient(180deg, #2a97bf, #196d8c);
+}
+
+.explorer-intro-caveat {
+    margin: 14px 0 0;
+    color: #718d99;
+    font-size: 12px;
+    line-height: 1.4;
+    text-align: center;
+}
+
+@media (max-width: 820px) {
+    .explorer-intro-sections {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .explorer-intro-card {
+        padding: 18px;
+    }
+
+    .explorer-intro-card:last-child {
+        grid-column: 1 / -1;
+    }
+
+    .explorer-intro-card:last-child ul {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: 28px;
+    }
+
+    .explorer-intro-number {
+        margin-bottom: 10px;
+    }
+}
+
+@media (max-width: 720px) {
+    .topbar-actions {
+        width: 100%;
+        justify-content: stretch;
+    }
+
+    .topbar-actions > button {
+        flex: 1 1 0;
+    }
+
+    .explorer-intro {
+        width: calc(100vw - 16px);
+        max-height: calc(100dvh - 16px);
+        border-radius: 16px;
+    }
+
+    .explorer-intro-panel {
+        padding: 22px 17px;
+    }
+
+    .explorer-intro-sections,
+    .explorer-intro-card:last-child ul {
+        grid-template-columns: 1fr;
+    }
+
+    .explorer-intro-card:last-child {
+        grid-column: auto;
+    }
+
+    .explorer-intro-closeout {
+        align-items: stretch;
+        flex-direction: column;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .explorer-intro,
+    .explorer-intro-enter {
+        scroll-behavior: auto;
+        transition: none;
+    }
+}
+
 /* Optional guided “Show me” wrapper. Kept isolated from the explorer layout. */
 .guide-replay {
     flex: 0 0 auto;

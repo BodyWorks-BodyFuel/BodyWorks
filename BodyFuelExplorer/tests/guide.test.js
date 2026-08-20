@@ -50,8 +50,10 @@ test("entry is optional, persistent, and permanently replayable", () => {
     assert.match(guide, /const preferenceKey = "bodyFuelExplorerGuideV1"/);
     assert.match(guide, /localStorage\.setItem\(preferenceKey, value\)/);
     assert.doesNotMatch(guide, /localStorage\.setItem\([^)]*(?:food|line|quantity|timeline)/i);
-    const invitationTimer = guide.match(/browserRoot\.setTimeout\(\(\) => \{\n\s*if \(!readPreference\(\)[\s\S]*?elements\.invitation\.hidden = false;[\s\S]*?\}, 550\)/)[0];
-    assert.doesNotMatch(invitationTimer, /focus\(/);
+    const invitationOffer = guide.match(/const offerInvitation = \(\) => \{[\s\S]*?browserRoot\.setTimeout\(offerInvitation, 550\)/)[0];
+    assert.match(invitationOffer, /!doc\.querySelector\("dialog\[open\]"\)/);
+    assert.match(invitationOffer, /addEventListener\("bodyfuel:intro-closed", offerInvitation\)/);
+    assert.doesNotMatch(invitationOffer, /focus\(/);
 });
 
 
@@ -180,7 +182,7 @@ test("guide copy follows the educational language contract", () => {
 
 
 test("base explorer stays unchanged until a visitor starts the guide", () => {
-    const initTail = guide.match(/browserRoot\.setTimeout\(\(\) => \{\n\s*if \(!readPreference\(\)[\s\S]*?\}, 550\)/)[0];
+    const initTail = guide.match(/const offerInvitation = \(\) => \{[\s\S]*?setTimeout\(offerInvitation, 550\)/)[0];
     assert.doesNotMatch(initTail, /loadScenario|clearLesson|restore\(/);
     assert.match(guide, /elements\.replay\.addEventListener\("click", \(\) => startGuide/);
     assert.match(guide, /elements\.invitationStart\.addEventListener\("click", \(\) => startGuide/);
