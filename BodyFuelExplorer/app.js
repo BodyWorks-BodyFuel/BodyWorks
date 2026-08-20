@@ -28,6 +28,25 @@ const {
     presets
 } = window.BodyFuelModel;
 
+const {
+    categories: foodCategories,
+    catalog: foodCatalog,
+    catalogById,
+    createExampleDay,
+    cloneLines,
+    aggregateFoods,
+    itemCount,
+    formatEnergyEstimate,
+    filteredCatalog
+} = window.BodyFuelFoods;
+
+const {
+    buildNarration,
+    suggestExperiment
+} = window.BodyFuelNarration;
+
+const coreExplanations = window.BodyFuelExplanations;
+
 const macroLabels = {
     protein: "Protein",
     carbs: "Carbohydrates",
@@ -58,6 +77,104 @@ const planner = {
 };
 
 const explorerHistoryKey = "bodyFuelExplorer";
+const emphasisDurationMs = 3000;
+const fixedActivityContext = Object.freeze(getActivityProfile(1));
+
+const foodExperience = {
+    lines: [],
+    filter: "breakfast",
+    source: "foods",
+    dayKind: "empty",
+    viewMode: "core",
+    lastChange: { type: "empty" },
+    lastClearedLines: null,
+    experimentUndo: null,
+    experiment: null,
+    currentState: null,
+    announcementTimer: null,
+    emphasisTimer: null
+};
+
+const foodElements = {
+    filters: document.getElementById("foodFilters"),
+    grid: document.getElementById("foodGrid"),
+    browserStatus: document.getElementById("foodBrowserStatus"),
+    tray: document.getElementById("foodTray"),
+    trayEmpty: document.getElementById("trayEmpty"),
+    daySummary: document.getElementById("daySummary"),
+    exampleNote: document.getElementById("exampleNote"),
+    loadExample: document.getElementById("loadExampleDay"),
+    clearStart: document.getElementById("clearStartButton"),
+    clearDay: document.getElementById("clearDayButton"),
+    clearFoods: document.getElementById("clearFoodsButton"),
+    undoClear: document.getElementById("undoClearButton"),
+    selectedFoodCount: document.getElementById("selectedFoodCount"),
+    estimatedEnergy: document.getElementById("estimatedFoodEnergy"),
+    modelEnergyContext: document.getElementById("modelEnergyContext"),
+    mobileSummary: document.getElementById("mobileDaySummary"),
+    mobileCount: document.getElementById("mobileDayCount"),
+    source: document.getElementById("technicalSource"),
+    sourceTitle: document.getElementById("technicalSourceTitle"),
+    sourceDetail: document.getElementById("technicalSourceDetail"),
+    useFoodEstimates: document.getElementById("useFoodEstimatesButton"),
+    narrationTitle: document.getElementById("narrationTitle"),
+    narrationBody: document.getElementById("narrationBody"),
+    narrationContext: document.getElementById("narrationContext"),
+    narrationAnnouncement: document.getElementById("narrationAnnouncement"),
+    experimentCard: document.getElementById("experimentCard"),
+    experimentButton: document.getElementById("experimentButton"),
+    workspace: document.getElementById("explorerMain"),
+    buildViewButton: document.getElementById("buildViewButton"),
+    seeViewButton: document.getElementById("seeViewButton"),
+    teaserBody: document.getElementById("teaserBody"),
+    teaserMessage: document.getElementById("teaserMessage"),
+    dockBody: document.getElementById("dockBody"),
+    liveBodyMessage: document.getElementById("liveBodyMessage"),
+    seeFoodsSummary: document.getElementById("seeFoodsSummary"),
+    seeActivitySummary: document.getElementById("seeActivitySummary"),
+    seeHorizonSummary: document.getElementById("seeHorizonSummary")
+};
+
+
+function placeCoreExperienceInReadingOrder() {
+    const workspace = foodElements.workspace;
+    const controlsPanel = workspace?.querySelector(".controls-panel");
+    const hero = workspace?.querySelector(".body-stage");
+
+    if (!workspace || !controlsPanel || !hero) return;
+
+    workspace.insertBefore(hero, controlsPanel);
+}
+
+
+function revealFocusedFoodRow(event) {
+    const wrapper = event.target.closest(".food-tile-wrap");
+    if (!wrapper || !foodElements.grid.contains(wrapper)) return;
+
+    const gridRect = foodElements.grid.getBoundingClientRect();
+    const tileRect = wrapper.getBoundingClientRect();
+    const rowIsFullyVisible =
+        tileRect.top >= gridRect.top && tileRect.bottom <= gridRect.bottom;
+
+    if (rowIsFullyVisible) return;
+
+    const rowTop = tileRect.top - gridRect.top + foodElements.grid.scrollTop;
+    foodElements.grid.scrollTop = Math.max(0, rowTop);
+}
+
+const coreElements = {
+    myDay: document.getElementById("coreMyDay"),
+    dialog: document.getElementById("coreExplanationDialog"),
+    dialogTitle: document.getElementById("coreExplanationTitle"),
+    dialogBody: document.getElementById("coreExplanationBody"),
+    dialogClose: document.getElementById("coreExplanationClose"),
+    dialogDetails: document.getElementById("coreExplanationDetails"),
+    dialogDetailsTitle: document.getElementById("coreExplanationDetailsTitle"),
+    dialogDetailsList: document.getElementById("coreExplanationDetailsList"),
+    timelineButtons: [...document.querySelectorAll("[data-timeline]")],
+    activeExplanationTrigger: null,
+    myDayTab: null
+};
 
 
 function createExplorerSnapshot() {
@@ -66,7 +183,12 @@ function createExplorerSnapshot() {
         document.querySelector(".preset.active")?.dataset.preset || null;
 
     return {
-        version: 3,
+        version: 6,
+        foodLines: cloneLines(foodExperience.lines),
+        foodSource: foodExperience.source,
+        foodDayKind: foodExperience.dayKind,
+        foodFilter: foodExperience.filter,
+        viewMode: foodExperience.viewMode,
         calorieTarget: Number(planner.calorieTarget),
         weightUnit: planner.weightUnit,
         currentWeight: plannerElements.currentWeight.value,
@@ -131,9 +253,35 @@ function restoreExplorerSnapshot() {
     const snapshot =
         history.state?.[explorerHistoryKey];
 
-    if (!snapshot || snapshot.version !== 3) {
+    if (!snapshot || snapshot.version !== 6) {
         return null;
     }
+
+    if (Array.isArray(snapshot.foodLines)) {
+        foodExperience.lines = snapshot.foodLines
+            .filter(line => catalogById[line.foodId] && Number(line.quantity) > 0)
+            .map(line => ({
+                foodId: line.foodId,
+                quantity: Number(line.quantity),
+                ...(Array.isArray(line.exampleMeals)
+                    ? { exampleMeals: [...line.exampleMeals] }
+                    : {})
+            }));
+    }
+
+    foodExperience.source = snapshot.foodSource === "manual"
+        ? "manual"
+        : "foods";
+    foodExperience.dayKind = ["example", "custom", "empty"].includes(snapshot.foodDayKind)
+        ? snapshot.foodDayKind
+        : "custom";
+    foodExperience.filter = foodCategories
+        .filter(category => category.id !== "all")
+        .map(category => category.id)
+        .includes(snapshot.foodFilter)
+        ? snapshot.foodFilter
+        : "breakfast";
+    foodExperience.viewMode = "core";
 
     macroKeys.forEach(key => {
         restoreRangeValue(
@@ -234,6 +382,93 @@ function labelLevel(value) {
 
 function timeLabel(value) {
     return getHorizonPeriod(value).label;
+}
+
+
+function updateCoreTimelineControl(time) {
+    const timelineDescriptions = [
+        "Today emphasizes immediate routing, essential fuel, working tissue, and glycogen.",
+        "Days emphasizes recurring fuel supply and glycogen use and refill.",
+        "Weeks emphasizes repair support, reserve use, and accumulating storage pressure.",
+        "Months emphasizes sustained storage, release, and longer-term adaptation tendencies."
+    ];
+    const repeatedPatternNote =
+        foodExperience.dayKind === "custom" && Number(time) > 0
+            ? " These selections are treated as the complete repeated daily pattern."
+            : "";
+
+    const comparison = modelComparisonMessage(foodExperience.currentState, time);
+
+    document.getElementById("horizonDescription").textContent =
+        foodExperience.lines.length
+            ? `${timelineDescriptions[Number(time)]} ${comparison.message}${repeatedPatternNote}`
+            : "Add foods first; the timeline will then change the model’s repeated-pattern lens.";
+
+    coreElements.timelineButtons.forEach(button => {
+        const selected = Number(button.dataset.timeline) === Number(time);
+        button.classList.toggle("is-active", selected);
+        button.setAttribute("aria-pressed", String(selected));
+    });
+
+    document.querySelector(".body-stage").dataset.timeline = String(time);
+    updateEstimatedFoodEnergy();
+}
+
+
+function updateEstimatedFoodEnergy() {
+    const totals = foodTotals();
+    const estimate = formatEnergyEstimate(totals.calories, controls.time.value);
+    const selectedCount = foodExperience.lines.length;
+
+    foodElements.selectedFoodCount.textContent =
+        `${selectedCount} ${selectedCount === 1 ? "food" : "foods"} selected`;
+    foodElements.estimatedEnergy.textContent = estimate.text;
+    foodElements.estimatedEnergy.setAttribute(
+        "aria-label",
+        estimate.ariaLabel
+    );
+    foodElements.modelEnergyContext.textContent =
+        `Model context: ${fixedActivityContext.label} ≈ ${Math.round(fixedActivityContext.demand).toLocaleString()} kcal/day`;
+}
+
+
+function modelComparisonMessage(state, time = controls.time.value) {
+    if (!state) {
+        return {
+            balanceState: "empty",
+            title: "No dietary inputs selected",
+            message: "Add a food below to bring the fuel pathways to life."
+        };
+    }
+
+    const balanceState = classifyEnergyBalance(state.balance);
+    const repeated = Number(time) >= 2;
+
+    if (balanceState === "deficit") {
+        return {
+            balanceState,
+            title: repeated
+                ? "Repeated supply stays below the model reference"
+                : "Reserve contribution is more visible",
+            message: repeated
+                ? "If this same supply-to-reference relationship repeats across weeks, reserve-use, repair, and storage tendencies become easier to see."
+                : "This selected day supplies less energy than the Everyday Movement model reference, so reserve contribution becomes more visible."
+        };
+    }
+
+    if (balanceState === "surplus") {
+        return {
+            balanceState,
+            title: "Storage tendency is more prominent",
+            message: "This selected day supplies more energy than the Everyday Movement model reference, so storage tendency becomes more prominent."
+        };
+    }
+
+    return {
+        balanceState,
+        title: "Priorities remain distributed",
+        message: "Incoming fuel sits near the Everyday Movement model reference, so the model’s priorities remain more distributed."
+    };
 }
 
 
@@ -451,11 +686,694 @@ function updateTrajectory(balance, time) {
 }
 
 
+function formatPortionQuantity(quantity) {
+    if (Number.isInteger(quantity)) return String(quantity);
+    if (quantity === 0.5) return "½";
+    return `${Math.floor(quantity)}½`;
+}
+
+
+function setExperienceView(view, { persist = true } = {}) {
+    if (document.body.classList.contains("core-mode")) {
+        foodExperience.viewMode = "core";
+        foodElements.workspace.dataset.view = "core";
+        if (persist) persistExplorerSnapshot();
+        return;
+    }
+
+    const nextView = view === "see" ? "see" : "build";
+    foodExperience.viewMode = nextView;
+    foodElements.workspace.dataset.view = nextView;
+    foodElements.buildViewButton.classList.toggle("active", nextView === "build");
+    foodElements.seeViewButton.classList.toggle("active", nextView === "see");
+    foodElements.buildViewButton.setAttribute("aria-pressed", String(nextView === "build"));
+    foodElements.seeViewButton.setAttribute("aria-pressed", String(nextView === "see"));
+
+    if (nextView === "see") {
+        window.requestAnimationFrame(scheduleRouteGeometryUpdate);
+    }
+
+    if (persist) persistExplorerSnapshot();
+}
+
+
+function liveChangeMessage() {
+    const item = catalogById[foodExperience.lastChange?.foodId];
+    const activity = getActivityProfile(controls.activity.value);
+    const horizon = getHorizonPeriod(controls.time.value);
+    const type = foodExperience.lastChange?.type;
+
+    if (!foodExperience.lines.length && foodExperience.source === "foods") {
+        return {
+            emphasis: "empty",
+            ...modelComparisonMessage(null)
+        };
+    }
+
+    const comparison = modelComparisonMessage(
+        foodExperience.currentState,
+        controls.time.value
+    );
+
+    if (["food-add", "food-increase", "food-decrease", "food-remove"].includes(type) && item) {
+        return {
+            emphasis: "food",
+            ...comparison
+        };
+    }
+
+    if (type === "activity") {
+        return {
+            emphasis: "movement",
+            ...comparison
+        };
+    }
+
+    if (type === "horizon") {
+        return {
+            emphasis: "horizon",
+            ...comparison
+        };
+    }
+
+    if (["technical", "technical-preset"].includes(type)) {
+        return {
+            emphasis: "whole",
+            ...comparison
+        };
+    }
+
+    return {
+        emphasis: "whole",
+        ...comparison
+    };
+}
+
+
+function updateLiveBody() {
+    const update = liveChangeMessage();
+    const bodies = [foodElements.teaserBody, foodElements.dockBody];
+    const fullStage = document.querySelector(".body-stage");
+    const changedItem = catalogById[foodExperience.lastChange?.foodId];
+    if (changedItem) {
+        const weightedInputs = {
+            protein: changedItem.estimate.protein * 4,
+            carbs: changedItem.estimate.carbs * 4,
+            fats: changedItem.estimate.fats * 9
+        };
+        fullStage.dataset.inputEmphasis = Object.entries(weightedInputs)
+            .sort((left, right) => right[1] - left[1])[0][0];
+    }
+
+    bodies.forEach(body => {
+        body.dataset.emphasis = update.emphasis;
+        body.classList.remove("is-emphasized");
+        void body.offsetWidth;
+        body.classList.add("is-emphasized");
+    });
+
+    foodElements.teaserMessage.textContent = update.message;
+    foodElements.liveBodyMessage.textContent = update.message;
+    document.getElementById("stateDescription").textContent = update.message;
+    document.getElementById("stateTitle").textContent = update.title;
+    fullStage.dataset.emphasis = update.emphasis;
+    fullStage.classList.remove("is-emphasized");
+    void fullStage.offsetWidth;
+    fullStage.classList.add("is-emphasized");
+
+    window.clearTimeout(foodExperience.emphasisTimer);
+    foodExperience.emphasisTimer = window.setTimeout(() => {
+        bodies.forEach(body => body.classList.remove("is-emphasized"));
+        fullStage.classList.remove("is-emphasized");
+    }, emphasisDurationMs);
+}
+
+
+function setFoodSource(source) {
+    foodExperience.source = source;
+    const adjusted = source === "manual";
+
+    foodElements.source.dataset.source = source;
+    foodElements.sourceTitle.textContent = adjusted
+        ? "Adjusted from foods"
+        : "Using food estimates";
+    foodElements.sourceDetail.textContent = adjusted
+        ? "The routing map is using the direct laboratory values below."
+        : "The values below come from Today’s foods.";
+    foodElements.useFoodEstimates.hidden = !adjusted;
+    document.getElementById("exploreModel").classList.toggle("is-adjusted", adjusted);
+}
+
+
+function enterAdjustedFromFoods(changeType = "technical") {
+    setFoodSource("manual");
+    foodExperience.lastChange = { type: changeType };
+}
+
+
+function foodTotals() {
+    return aggregateFoods(foodExperience.lines);
+}
+
+
+function syncFoodTotalsToControls() {
+    const totals = foodTotals();
+
+    macroKeys.forEach(key => {
+        controls[key].value = Math.round(totals[key]);
+    });
+
+    planner.calorieTarget = totals.calories;
+    updateCalorieTargetDisplay();
+    clearMacroLocks();
+
+    setCalorieStatus(
+        foodExperience.lines.length === 0
+            ? "Add foods to create model inputs."
+            : "Values are derived from Today’s foods. Moving a technical control will adjust them from the food estimates."
+    );
+}
+
+
+function updateTechnicalTotals(totals) {
+    document.getElementById("technicalCalories").textContent =
+        Math.round(totals.calories).toLocaleString();
+    document.getElementById("technicalProtein").textContent =
+        Math.round(totals.protein).toLocaleString();
+    document.getElementById("technicalCarbs").textContent =
+        Math.round(totals.carbs).toLocaleString();
+    document.getElementById("technicalFats").textContent =
+        Math.round(totals.fats).toLocaleString();
+}
+
+
+function renderFoodBrowser() {
+    foodElements.filters.replaceChildren();
+
+    const workspaceTabs = foodCategories.filter(category => category.id !== "all");
+
+    workspaceTabs.forEach(category => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "food-filter";
+        button.dataset.category = category.id;
+        button.id = `foodTab-${category.id}`;
+        button.setAttribute("role", "tab");
+        button.setAttribute("aria-controls", "foodGrid");
+        button.textContent = category.label;
+        button.setAttribute("aria-pressed", String(foodExperience.filter === category.id));
+        button.setAttribute("aria-selected", String(foodExperience.filter === category.id));
+        button.tabIndex = foodExperience.filter === category.id ? 0 : -1;
+        button.addEventListener("click", () => {
+            foodExperience.filter = category.id;
+            renderFoodBrowser();
+            foodElements.grid.scrollTop = 0;
+            foodElements.browserStatus.textContent =
+                `${category.label} foods shown.`;
+            persistExplorerSnapshot();
+        });
+        foodElements.filters.append(button);
+    });
+
+    foodElements.grid.replaceChildren();
+
+    foodElements.grid.hidden = false;
+    coreElements.myDay.hidden = true;
+    foodElements.grid.setAttribute("role", "tabpanel");
+    foodElements.grid.setAttribute("aria-labelledby", `foodTab-${foodExperience.filter}`);
+
+    filteredCatalog(foodExperience.filter).forEach(item => {
+        const selectedLine = foodExperience.lines.find(line => line.foodId === item.id);
+        const selectedQuantity = selectedLine?.quantity || 0;
+        const wrapper = document.createElement("article");
+        wrapper.className = "food-tile-wrap";
+        wrapper.classList.toggle("is-selected", selectedQuantity > 0);
+        wrapper.dataset.foodId = item.id;
+        wrapper.setAttribute("aria-label", `${item.name}, representative portion ${item.portion}`);
+
+        const tile = document.createElement("div");
+        tile.className = "food-tile";
+        tile.dataset.foodId = item.id;
+        tile.dataset.artGroup = item.groups[0];
+        tile.dataset.selected = String(selectedQuantity > 0);
+
+        const art = document.createElement("span");
+        art.className = "food-art";
+        art.textContent = item.art;
+        art.setAttribute("aria-hidden", "true");
+
+        const copy = document.createElement("span");
+        copy.className = "food-tile-copy";
+        const name = document.createElement("strong");
+        name.textContent = item.name;
+        const portion = document.createElement("small");
+        portion.textContent = item.portion;
+        copy.append(name, portion);
+
+        const stepper = document.createElement("div");
+        stepper.className = "catalog-portion-stepper";
+        stepper.setAttribute("role", "group");
+        stepper.setAttribute("aria-label", `${item.name} portion quantity`);
+
+        const decrease = document.createElement("button");
+        decrease.type = "button";
+        decrease.className = "catalog-portion-decrease";
+        decrease.textContent = "−";
+        decrease.disabled = selectedQuantity <= 0;
+        decrease.setAttribute("aria-label", `Remove one portion of ${item.name}`);
+        decrease.addEventListener("click", () => adjustFoodFromTile(item.id, -1));
+
+        const quantity = document.createElement("output");
+        quantity.className = "catalog-portion-count";
+        quantity.textContent = formatPortionQuantity(selectedQuantity);
+        quantity.setAttribute(
+            "aria-label",
+            `${item.name} current quantity ${formatPortionQuantity(selectedQuantity)}`
+        );
+
+        const increase = document.createElement("button");
+        increase.type = "button";
+        increase.className = "catalog-portion-increase";
+        increase.textContent = "+";
+        increase.setAttribute("aria-label", `Add one portion of ${item.name}`);
+        increase.addEventListener("click", () => adjustFoodFromTile(item.id, 1));
+
+        stepper.append(decrease, quantity, increase);
+        tile.append(art, copy, stepper);
+
+        const help = document.createElement("button");
+        help.type = "button";
+        help.className = "food-tile-help";
+        help.id = `foodHelp-${item.id}`;
+        help.textContent = "i";
+        help.setAttribute("aria-label", `About the representative portion for ${item.name}`);
+        help.dataset.coreExplanation = "food-portions";
+
+        wrapper.append(tile, help);
+        foodElements.grid.append(wrapper);
+    });
+}
+
+
+function syncFoodTileSelections() {
+    foodElements.grid.querySelectorAll(".food-tile-wrap").forEach(wrapper => {
+        const item = catalogById[wrapper.dataset.foodId];
+        const line = foodExperience.lines.find(entry => entry.foodId === wrapper.dataset.foodId);
+        const quantity = line?.quantity || 0;
+        const selected = quantity > 0;
+        const tile = wrapper.querySelector(".food-tile");
+        const decrease = wrapper.querySelector(".catalog-portion-decrease");
+        const count = wrapper.querySelector(".catalog-portion-count");
+
+        wrapper.classList.toggle("is-selected", selected);
+        tile.dataset.selected = String(selected);
+        decrease.disabled = !selected;
+        count.textContent = formatPortionQuantity(quantity);
+        count.setAttribute(
+            "aria-label",
+            `${item.name} current quantity ${formatPortionQuantity(quantity)}`
+        );
+    });
+}
+
+
+function createTrayRow(line, displayQuantity = line.quantity) {
+    const item = catalogById[line.foodId];
+    const row = document.createElement("article");
+    row.className = "tray-row";
+    row.dataset.foodId = item.id;
+
+    const copy = document.createElement("div");
+    copy.className = "tray-row-copy";
+    const name = document.createElement("strong");
+    name.textContent = item.name;
+    const portion = document.createElement("span");
+    portion.textContent = item.portion;
+    copy.append(name, portion);
+
+    const stepper = document.createElement("div");
+    stepper.className = "portion-stepper";
+    const decrease = document.createElement("button");
+    decrease.type = "button";
+    decrease.textContent = "−";
+    decrease.setAttribute("aria-label", `Decrease ${item.name}`);
+    decrease.addEventListener("click", () => changeFoodQuantity(item.id, -item.portionStep));
+    const quantity = document.createElement("output");
+    quantity.textContent = `${formatPortionQuantity(displayQuantity)}×`;
+    quantity.setAttribute(
+        "aria-label",
+        `${formatPortionQuantity(displayQuantity)} ${displayQuantity === 1 ? "portion" : "portions"}`
+    );
+    const increase = document.createElement("button");
+    increase.type = "button";
+    increase.textContent = "+";
+    increase.setAttribute("aria-label", `Increase ${item.name}`);
+    increase.addEventListener("click", () => changeFoodQuantity(item.id, item.portionStep));
+    stepper.append(decrease, quantity, increase);
+
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "tray-remove";
+    remove.textContent = "×";
+    remove.setAttribute("aria-label", `Remove ${item.name}`);
+    remove.addEventListener("click", () => removeFood(item.id));
+
+    row.append(copy, stepper, remove);
+    return row;
+}
+
+
+function renderExampleMeals() {
+    ["Breakfast", "Lunch", "Dinner"].forEach(mealName => {
+        const mealLines = foodExperience.lines.filter(line =>
+            line.exampleMeals?.includes(mealName)
+        );
+        const details = document.createElement("details");
+        details.className = "meal-group";
+        const summary = document.createElement("summary");
+        summary.innerHTML = `<span>${mealName}</span><small>${mealLines.length} foods</small>`;
+        const rows = document.createElement("div");
+        rows.className = "meal-rows";
+        mealLines.forEach(line => {
+            const perMealQuantity = line.quantity / line.exampleMeals.length;
+            rows.append(createTrayRow(line, perMealQuantity));
+        });
+        details.append(summary, rows);
+        foodElements.tray.append(details);
+    });
+}
+
+
+function renderCustomDay() {
+    if (document.body.classList.contains("core-mode")) {
+        foodExperience.lines.forEach(line => {
+            foodElements.tray.append(createTrayRow(line));
+        });
+        return;
+    }
+
+    const chips = document.createElement("div");
+    chips.className = "day-chips";
+    chips.setAttribute("aria-label", "Foods in this partial day");
+    foodExperience.lines.forEach(line => {
+        const chip = document.createElement("span");
+        chip.textContent = `${catalogById[line.foodId].name} · ${formatPortionQuantity(line.quantity)}×`;
+        chips.append(chip);
+    });
+
+    const details = document.createElement("details");
+    details.className = "custom-edit-panel";
+    const summary = document.createElement("summary");
+    summary.textContent = "Edit portions";
+    const rows = document.createElement("div");
+    rows.className = "custom-edit-rows";
+    foodExperience.lines.forEach(line => rows.append(createTrayRow(line)));
+    details.append(summary, rows);
+    foodElements.tray.append(chips, details);
+}
+
+
+function renderTray() {
+    const empty = foodExperience.lines.length === 0;
+    const foodCount = foodExperience.lines.length;
+    const noun = foodCount === 1 ? "food" : "foods";
+
+    foodElements.tray.hidden = empty;
+    foodElements.trayEmpty.hidden = !empty;
+    foodElements.clearDay.disabled = empty;
+    foodElements.clearFoods.classList.toggle("is-inactive", empty);
+    foodElements.clearFoods.setAttribute("aria-disabled", String(empty));
+    updateEstimatedFoodEnergy();
+    foodElements.loadExample.classList.toggle("active", foodExperience.dayKind === "example");
+    foodElements.loadExample.setAttribute("aria-pressed", String(foodExperience.dayKind === "example"));
+    foodElements.exampleNote.hidden = foodExperience.dayKind !== "example";
+
+    if (coreElements.myDayTab) {
+        coreElements.myDayTab.textContent = foodCount
+            ? `My Day · ${foodCount}`
+            : "My Day";
+        coreElements.myDayTab.setAttribute(
+            "aria-label",
+            foodCount ? `My Day, ${foodCount} selected ${noun}` : "My Day, no foods selected"
+        );
+    }
+
+    if (empty) {
+        foodElements.daySummary.textContent = "No foods added yet";
+        foodElements.mobileCount.textContent = "No foods yet";
+        foodElements.seeFoodsSummary.textContent = "No foods added";
+    } else if (foodExperience.dayKind === "example") {
+        foodElements.daySummary.textContent = `Familiar Meals Example · ${foodCount} foods`;
+        foodElements.mobileCount.textContent = `${foodCount} foods`;
+        foodElements.seeFoodsSummary.textContent = `Familiar example · ${foodCount} foods`;
+    } else {
+        foodElements.daySummary.textContent = `A partial day so far · ${foodCount} ${noun}`;
+        foodElements.mobileCount.textContent = `${foodCount} ${noun}`;
+        foodElements.seeFoodsSummary.textContent = `Partial day · ${foodCount} ${noun}`;
+    }
+
+    foodElements.tray.replaceChildren();
+
+    if (foodExperience.dayKind === "example") {
+        renderExampleMeals();
+    } else if (!empty) {
+        renderCustomDay();
+    }
+}
+
+
+function snapshotExperimentState() {
+    return {
+        lines: cloneLines(foodExperience.lines),
+        source: foodExperience.source,
+        dayKind: foodExperience.dayKind,
+        activity: Number(controls.activity.value),
+        time: Number(controls.time.value),
+        macros: Object.fromEntries(macroKeys.map(key => [key, Number(controls[key].value)])),
+        calorieTarget: planner.calorieTarget
+    };
+}
+
+
+function renderNarration(state) {
+    const item = catalogById[foodExperience.lastChange?.foodId];
+    const activity = getActivityProfile(controls.activity.value);
+    const horizon = getHorizonPeriod(controls.time.value);
+    const narration = buildNarration({
+        change: foodExperience.lastChange,
+        state,
+        item,
+        activity,
+        horizon,
+        source: foodExperience.source
+    });
+
+    foodElements.narrationTitle.textContent = narration.title;
+    foodElements.narrationBody.textContent = narration.body;
+    foodElements.narrationContext.textContent = narration.context;
+
+    window.clearTimeout(foodExperience.announcementTimer);
+    foodExperience.announcementTimer = window.setTimeout(() => {
+        foodElements.narrationAnnouncement.textContent =
+            `${narration.title}. ${narration.body}`;
+    }, 420);
+
+    if (foodExperience.experimentUndo) {
+        foodElements.experimentCard.hidden = false;
+        foodElements.experimentButton.textContent = "Undo experiment";
+        return;
+    }
+
+    const experiment = suggestExperiment({
+        change: foodExperience.lastChange,
+        activity,
+        horizon,
+        item
+    });
+
+    foodExperience.experiment = experiment;
+    foodElements.experimentCard.hidden = !experiment;
+
+    if (experiment) {
+        foodElements.experimentButton.textContent = experiment.label;
+    }
+}
+
+
+function refreshFoodExperience({ syncControls = true } = {}) {
+    setFoodSource(foodExperience.source);
+    renderTray();
+    syncFoodTileSelections();
+
+    if (syncControls && foodExperience.source === "foods") {
+        syncFoodTotalsToControls();
+    }
+
+    calculate();
+}
+
+
+function addFood(foodId) {
+    const item = catalogById[foodId];
+    if (!item) return;
+
+    const existing = foodExperience.lines.find(line => line.foodId === foodId);
+    if (existing) {
+        existing.quantity += 1;
+        delete existing.exampleMeals;
+    } else {
+        foodExperience.lines.push({ foodId, quantity: 1 });
+    }
+
+    foodExperience.dayKind = "custom";
+    foodExperience.lastChange = { type: "food-add", foodId };
+    foodExperience.experimentUndo = null;
+    setFoodSource("foods");
+    foodElements.undoClear.hidden = true;
+    foodElements.browserStatus.textContent = `${item.name} added. ${foodExperience.lines.length} ${foodExperience.lines.length === 1 ? "food" : "foods"} selected.`;
+    refreshFoodExperience();
+}
+
+
+function adjustFoodFromTile(foodId, delta) {
+    const line = foodExperience.lines.find(entry => entry.foodId === foodId);
+
+    if (delta > 0 && !line) {
+        addFood(foodId);
+        return;
+    }
+
+    if (line) {
+        changeFoodQuantity(foodId, delta > 0 ? 1 : -1);
+    }
+}
+
+
+function changeFoodQuantity(foodId, delta) {
+    const line = foodExperience.lines.find(entry => entry.foodId === foodId);
+    if (!line) return;
+
+    line.quantity = Math.round((line.quantity + delta) * 2) / 2;
+    delete line.exampleMeals;
+
+    if (line.quantity <= 0) {
+        foodExperience.lines = foodExperience.lines.filter(entry => entry.foodId !== foodId);
+    }
+
+    foodExperience.dayKind = foodExperience.lines.length ? "custom" : "empty";
+    foodExperience.lastChange = {
+        type: delta > 0 ? "food-increase" : "food-decrease",
+        foodId
+    };
+    foodExperience.experimentUndo = null;
+    setFoodSource("foods");
+    refreshFoodExperience();
+}
+
+
+function removeFood(foodId) {
+    foodExperience.lines = foodExperience.lines.filter(line => line.foodId !== foodId);
+    foodExperience.dayKind = foodExperience.lines.length ? "custom" : "empty";
+    foodExperience.lastChange = { type: "food-remove", foodId };
+    foodExperience.experimentUndo = null;
+    setFoodSource("foods");
+    refreshFoodExperience();
+}
+
+
+function clearFoodDay() {
+    if (!foodExperience.lines.length) return;
+
+    foodExperience.lastClearedLines = cloneLines(foodExperience.lines);
+    foodExperience.lines = [];
+    foodExperience.dayKind = "empty";
+    foodExperience.lastChange = { type: "empty" };
+    foodExperience.experimentUndo = null;
+    foodElements.undoClear.hidden = false;
+    setFoodSource("foods");
+    refreshFoodExperience();
+    foodElements.browserStatus.textContent = "All selected foods cleared. Undo is available.";
+}
+
+
+function loadFamiliarMealsExample() {
+    foodExperience.lines = createExampleDay();
+    foodExperience.dayKind = "example";
+    foodExperience.lastChange = { type: "example" };
+    foodExperience.lastClearedLines = null;
+    foodExperience.experimentUndo = null;
+    foodElements.undoClear.hidden = true;
+    controls.activity.value = 1;
+    controls.time.value = 0;
+    setFoodSource("foods");
+    refreshFoodExperience();
+}
+
+
+function renderEmptyModelState() {
+    document.querySelector(".body-stage").classList.add("is-empty");
+    document.querySelector(".body-stage").classList.remove("has-foods");
+    document.querySelector(".body-stage").classList.remove("is-releasing");
+    document.querySelector(".routing-stage").classList.remove("is-releasing");
+    document.querySelector(".routing-stage").dataset.balanceState = "empty";
+    document.querySelector(".stage-message").dataset.balanceState = "empty";
+    document.getElementById("balanceSummary").textContent = "No dietary inputs supplied";
+    document.getElementById("stateTitle").textContent = "No dietary inputs selected";
+    document.getElementById("stateDescription").textContent =
+        "Add a food below to bring the fuel pathways to life.";
+    ["Protein", "Carbs", "Fats"].forEach(name => {
+        document.getElementById(`stage${name}Value`).textContent = "Tap to learn";
+    });
+
+    ["fuel", "glycogen", "muscle", "repair", "fatUse", "storage"].forEach(id => {
+        document.getElementById(`${id}Output`).textContent = "—";
+        document.getElementById(`${id}Status`).textContent = "Not modeled";
+        document.getElementById(`${id}Gauge`).setAttribute("stroke-dasharray", "0 100");
+        const destination = document.getElementById(
+            `destination${id.charAt(0).toUpperCase()}${id.slice(1)}Value`
+        );
+        if (destination) destination.textContent = "—";
+    });
+
+    updateTechnicalTotals(foodTotals());
+    document.getElementById("timeLabel").textContent = timeLabel(controls.time.value);
+    updateCoreTimelineControl(controls.time.value);
+    renderNarration(null);
+    updateLiveBody();
+    persistExplorerSnapshot();
+}
+
+
 function calculate() {
 
-    const protein = Number(controls.protein.value);
-    const carbs = Number(controls.carbs.value);
-    const fats = Number(controls.fats.value);
+    if (
+        foodExperience.source === "foods" &&
+        foodExperience.lines.length === 0
+    ) {
+        foodExperience.currentState = null;
+        renderEmptyModelState();
+        return;
+    }
+
+    document.querySelector(".body-stage").classList.remove("is-empty");
+    document.querySelector(".body-stage").classList.add("has-foods");
+
+    const totals = foodExperience.source === "foods"
+        ? foodTotals()
+        : {
+            protein: Number(controls.protein.value),
+            carbs: Number(controls.carbs.value),
+            fats: Number(controls.fats.value),
+            calories: calculateMacroCalories({
+                protein: Number(controls.protein.value),
+                carbs: Number(controls.carbs.value),
+                fats: Number(controls.fats.value)
+            })
+        };
+
+    const protein = totals.protein;
+    const carbs = totals.carbs;
+    const fats = totals.fats;
 
     const activity = Number(controls.activity.value);
     const time = Number(controls.time.value);
@@ -467,6 +1385,9 @@ function calculate() {
         activity,
         time
     });
+
+    foodExperience.currentState = state;
+    updateTechnicalTotals(totals);
 
     const {
         balance,
@@ -507,6 +1428,10 @@ function calculate() {
 
     updateMacroLockUI();
 
+    renderNarration(state);
+
+    updateLiveBody();
+
     persistExplorerSnapshot();
 
     scheduleRouteGeometryUpdate();
@@ -532,14 +1457,25 @@ function updateText(
     document.getElementById("fatsValue").textContent =
         fats;
 
-    document.getElementById("stageProteinValue").textContent =
-        protein;
+    const macroEnergy = {
+        Protein: protein * 4,
+        Carbs: carbs * 4,
+        Fats: fats * 9
+    };
+    const totalMacroEnergy = Math.max(
+        1,
+        macroEnergy.Protein + macroEnergy.Carbs + macroEnergy.Fats
+    );
 
-    document.getElementById("stageCarbsValue").textContent =
-        carbs;
-
-    document.getElementById("stageFatsValue").textContent =
-        fats;
+    Object.entries(macroEnergy).forEach(([name, energy]) => {
+        const share = energy / totalMacroEnergy;
+        const label = share < 0.20
+            ? "Smaller share of today’s mix"
+            : share > 0.45
+                ? "Larger share of today’s mix"
+                : "Present in today’s mix";
+        document.getElementById(`stage${name}Value`).textContent = label;
+    });
 
     controls.protein.setAttribute(
         "aria-valuetext",
@@ -561,6 +1497,7 @@ function updateText(
 
     document.getElementById("activityLabel").textContent =
         activityProfile.label;
+    foodElements.seeActivitySummary.textContent = activityProfile.label;
 
     document.getElementById("activityDemandValue").textContent =
         `Model reference: ≈ ${Math.round(energyDemand).toLocaleString()} kcal/day`;
@@ -584,49 +1521,18 @@ function updateText(
 
     document.getElementById("timeLabel").textContent =
         timeLabel(time);
-
-    document.getElementById("horizonDescription").textContent =
-        getHorizonPeriod(time).description;
+    foodElements.seeHorizonSummary.textContent = timeLabel(time);
 
     controls.time.setAttribute(
         "aria-valuetext",
         timeLabel(time)
     );
 
-    document
-        .querySelectorAll(".horizon-scale [data-horizon]")
-        .forEach(label => {
-            label.classList.toggle(
-                "is-active",
-                Number(label.dataset.horizon) === Number(time)
-            );
-        });
+    updateCoreTimelineControl(time);
 }
 
 
 function outputStatus(id, value) {
-
-    if (id === "fuel") {
-        if (value < 30) return "Constrained";
-        if (value < 55) return "Limited";
-        if (value < 80) return "Good";
-        return "Abundant";
-    }
-
-    if (id === "glycogen") {
-        if (value < 30) return "Low";
-        if (value < 60) return "Moderate";
-        if (value < 80) return "High";
-        return "Full";
-    }
-
-    if (id === "fatUse") {
-        if (value < 30) return "Low";
-        if (value < 60) return "Moderate";
-        if (value < 80) return "High";
-        return "Dominant";
-    }
-
     return labelLevel(value);
 }
 
@@ -712,6 +1618,17 @@ function updateRouteChannel(name, value) {
     channel.dataset.flowLevel =
         presentation.level;
 
+    const storageEmphasized =
+        name === "storage" &&
+        presentation.level !== "low";
+
+    if (storageEmphasized) {
+        channel.style.opacity = Math.min(
+            1,
+            presentation.channelOpacity * 1.18
+        );
+    }
+
     const paths =
         [...channel.querySelectorAll(".route-path")];
 
@@ -724,12 +1641,20 @@ function updateRouteChannel(name, value) {
                     : 1;
 
         path.style.strokeWidth =
-            `${(presentation.pathWidth * widthScale).toFixed(2)}px`;
+            `${(
+                presentation.pathWidth * widthScale *
+                (storageEmphasized ? 1.28 : 1)
+            ).toFixed(2)}px`;
 
-        path.style.opacity =
+        const pathOpacity =
             path.classList.contains("route-share")
                 ? Math.max(0.20, presentation.pathOpacity * 0.64)
                 : presentation.pathOpacity * (isRelease ? 0.72 : 1);
+
+        path.style.opacity = Math.min(
+            1,
+            pathOpacity * (storageEmphasized ? 1.22 : 1)
+        );
     });
 
     const envelopes =
@@ -737,18 +1662,20 @@ function updateRouteChannel(name, value) {
 
     envelopes.forEach(envelope => {
         envelope.style.strokeWidth =
-            `${(
+            `${((
                 isRelease
                     ? 2.4 + presentation.pathWidth * 1.35
                     : 3.2 + presentation.pathWidth * 2.65
-            ).toFixed(2)}px`;
+            ) * (storageEmphasized ? 1.12 : 1)).toFixed(2)}px`;
 
-        envelope.style.opacity =
+        envelope.style.opacity = Math.min(
+            1,
             (
                 isRelease
                     ? 0.02 + presentation.contrast * 0.14
                     : 0.035 + presentation.contrast * 0.29
-            ).toFixed(2);
+            ) * (storageEmphasized ? 1.24 : 1)
+        ).toFixed(2);
     });
 
     const filaments =
@@ -844,26 +1771,38 @@ function updateVisuals(state) {
     const routingStage =
         document.querySelector(".routing-stage");
 
-    routingStage.classList.toggle(
-        "is-releasing",
-        routeSignals.release > 12
-    );
+    const isReleasing =
+        routeSignals.release > 12;
+
+    routingStage.classList.toggle("is-releasing", isReleasing);
+    document.querySelector(".body-stage")
+        .classList.toggle("is-releasing", isReleasing);
 
     updateBalanceAura(balance);
 
     Object.entries(routeSignals.destinations)
         .forEach(([name, value]) => {
+            const cardSignal = name === "liver"
+                ? routeSignals.strengths.liver
+                : value;
+            const destinationClass = {
+                fuel: "brain",
+                fatUse: "fat-use"
+            }[name] || name;
             const card = document.querySelector(
-                `.destination-${name === "fuel" ? "brain" : name === "fatUse" ? "liver" : name}`
+                `.destination-${destinationClass}`
             );
 
             if (card) {
+                card.style.setProperty("--signal", (cardSignal / 100).toFixed(2));
                 card.classList.toggle(
                     "is-prioritized",
-                    value >= 68
+                    cardSignal >= 68
                 );
             }
         });
+
+    const liverSignal = routeSignals.strengths.liver;
 
 
     /*
@@ -880,7 +1819,7 @@ function updateVisuals(state) {
         document.querySelector(".liver");
 
     liverRegion.style.opacity =
-        0.03 + fatUse / 300;
+        0.03 + liverSignal / 300;
 
     const glycogenRegion =
         document.querySelector(".glycogen-reserve");
@@ -951,9 +1890,9 @@ function updateBalanceAura(balance) {
         document.querySelector(".stage-message");
 
     const labels = {
-        deficit: "Drawing from stores",
-        matched: "Supply near demand",
-        surplus: "Supply above demand"
+        deficit: "Selected supply below reference",
+        matched: "Selected supply near reference",
+        surplus: "Selected supply above reference"
     };
 
     stageMessage.dataset.balanceState =
@@ -1030,6 +1969,7 @@ function applyPreset(name, options = {}) {
     const clearGoals =
         options.clearGoals === true;
 
+    enterAdjustedFromFoods("technical-preset");
     clearMacroLocks();
 
     Object.keys(preset).forEach(key => {
@@ -1086,6 +2026,7 @@ macroKeys.forEach(key => {
     controls[key].addEventListener(
         "input",
         () => {
+            enterAdjustedFromFoods("technical");
             clearActivePreset();
 
             const requestedTarget =
@@ -1117,6 +2058,10 @@ macroKeys.forEach(key => {
             "input",
             () => {
                 clearActivePreset();
+                foodExperience.lastChange = {
+                    type: key === "activity" ? "activity" : "horizon"
+                };
+                foodExperience.experimentUndo = null;
 
                 setCalorieStatus(
                     key === "activity"
@@ -1133,6 +2078,7 @@ macroKeys.forEach(key => {
 plannerElements.calorieTarget.addEventListener(
     "input",
     () => {
+        enterAdjustedFromFoods("technical");
         clearActivePreset();
 
         const requestedTarget =
@@ -1160,6 +2106,7 @@ plannerElements.calorieTarget.addEventListener(
 plannerElements.resetMixButton.addEventListener(
     "click",
     () => {
+        enterAdjustedFromFoods("technical");
         clearActivePreset();
 
         const result =
@@ -1187,6 +2134,7 @@ document
         button.addEventListener(
             "click",
             () => {
+                enterAdjustedFromFoods("technical");
                 const key =
                     button.dataset.macro;
 
@@ -1294,8 +2242,182 @@ document
 document
     .getElementById("resetButton")
     .addEventListener("click", () => {
-        applyPreset("everyday", { clearGoals: true });
+        loadFamiliarMealsExample();
     });
+
+
+foodElements.loadExample.addEventListener("click", loadFamiliarMealsExample);
+foodElements.clearStart.addEventListener("click", clearFoodDay);
+foodElements.clearDay.addEventListener("click", clearFoodDay);
+foodElements.clearFoods.addEventListener("click", clearFoodDay);
+
+foodElements.undoClear.addEventListener("click", () => {
+    if (!foodExperience.lastClearedLines) return;
+
+    foodExperience.lines = cloneLines(foodExperience.lastClearedLines);
+    foodExperience.lastClearedLines = null;
+    foodExperience.dayKind = "custom";
+    foodExperience.lastChange = { type: "food-restore" };
+    foodElements.undoClear.hidden = true;
+    setFoodSource("foods");
+    refreshFoodExperience();
+    foodElements.browserStatus.textContent = "Previous food selections restored.";
+    foodElements.clearFoods.focus();
+});
+
+foodElements.useFoodEstimates.addEventListener("click", () => {
+    clearActivePreset();
+    foodExperience.lastChange = { type: "food-sync" };
+    setFoodSource("foods");
+    refreshFoodExperience();
+});
+
+foodElements.experimentButton.addEventListener("click", () => {
+    if (foodExperience.experimentUndo) {
+        const undo = foodExperience.experimentUndo;
+        foodExperience.lines = cloneLines(undo.lines);
+        foodExperience.dayKind = undo.dayKind;
+        controls.activity.value = undo.activity;
+        controls.time.value = undo.time;
+        macroKeys.forEach(key => {
+            controls[key].value = undo.macros[key];
+        });
+        planner.calorieTarget = undo.calorieTarget;
+        foodExperience.experimentUndo = null;
+        foodExperience.lastChange = { type: "experiment-undo" };
+        setFoodSource(undo.source);
+        refreshFoodExperience({ syncControls: undo.source === "foods" });
+        return;
+    }
+
+    const experiment = foodExperience.experiment;
+    if (!experiment) return;
+
+    const undo = snapshotExperimentState();
+    const action = experiment.action;
+
+    if (action.type === "activity") {
+        controls.activity.value = action.value;
+    } else if (action.type === "horizon") {
+        controls.time.value = action.value;
+    } else if (action.type === "add-food") {
+        const existing = foodExperience.lines.find(line => line.foodId === action.foodId);
+        if (existing) existing.quantity += 1;
+        else foodExperience.lines.push({ foodId: action.foodId, quantity: 1 });
+        foodExperience.dayKind = "custom";
+        setFoodSource("foods");
+    }
+
+    foodExperience.experimentUndo = undo;
+    foodExperience.lastChange = { type: "experiment", foodId: action.foodId };
+    refreshFoodExperience();
+});
+
+document.querySelectorAll("[data-view-target]").forEach(button => {
+    button.addEventListener("click", () => {
+        setExperienceView(button.dataset.viewTarget);
+    });
+});
+
+foodElements.buildViewButton.addEventListener("click", () => {
+    setExperienceView("build");
+});
+
+foodElements.seeViewButton.addEventListener("click", () => {
+    setExperienceView("see");
+});
+
+
+coreElements.timelineButtons.forEach(button => {
+    button.addEventListener("click", () => {
+        controls.time.value = button.dataset.timeline;
+        controls.time.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+});
+
+
+foodElements.filters.addEventListener("keydown", event => {
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+
+    const tabs = [...foodElements.filters.querySelectorAll('[role="tab"]')];
+    const currentIndex = tabs.indexOf(document.activeElement);
+    if (currentIndex < 0) return;
+
+    event.preventDefault();
+    const nextIndex = event.key === "Home"
+        ? 0
+        : event.key === "End"
+            ? tabs.length - 1
+            : (currentIndex + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
+    tabs[nextIndex].focus();
+    tabs[nextIndex].click();
+});
+
+
+function openCoreExplanation(trigger) {
+    const explanation = coreExplanations[trigger.dataset.coreExplanation];
+    if (!explanation) return;
+
+    coreElements.activeExplanationTrigger = trigger;
+    coreElements.dialogTitle.textContent = explanation.title;
+    coreElements.dialogBody.textContent = explanation.body;
+    coreElements.dialogDetails.hidden = !explanation.details?.length;
+    coreElements.dialogDetails.open = false;
+    coreElements.dialogDetailsTitle.textContent = explanation.detailsTitle || "More context";
+    coreElements.dialogDetailsList.replaceChildren();
+    explanation.details?.forEach(detail => {
+        const item = document.createElement("li");
+        item.textContent = detail;
+        coreElements.dialogDetailsList.append(item);
+    });
+
+    if (typeof coreElements.dialog.showModal === "function") {
+        coreElements.dialog.showModal();
+    } else {
+        coreElements.dialog.setAttribute("open", "");
+    }
+
+    window.requestAnimationFrame(() => coreElements.dialogClose.focus());
+}
+
+
+function closeCoreExplanation() {
+    if (typeof coreElements.dialog.close === "function" && coreElements.dialog.open) {
+        coreElements.dialog.close();
+    } else {
+        coreElements.dialog.removeAttribute("open");
+        coreElements.activeExplanationTrigger?.focus();
+    }
+}
+
+
+document.addEventListener("click", event => {
+    const trigger = event.target.closest("[data-core-explanation]");
+    if (trigger) openCoreExplanation(trigger);
+});
+
+document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && coreElements.dialog.open) {
+        event.preventDefault();
+        closeCoreExplanation();
+        return;
+    }
+
+    const trigger = event.target.closest?.("[data-core-explanation]");
+    if (trigger && ["Enter", " "].includes(event.key) && !trigger.matches("button")) {
+        event.preventDefault();
+        openCoreExplanation(trigger);
+    }
+});
+
+coreElements.dialogClose.addEventListener("click", closeCoreExplanation);
+coreElements.dialog.addEventListener("close", () => {
+    coreElements.activeExplanationTrigger?.focus();
+    coreElements.activeExplanationTrigger = null;
+});
+coreElements.dialog.addEventListener("click", event => {
+    if (event.target === coreElements.dialog) closeCoreExplanation();
+});
 
 
 /*
@@ -1618,6 +2740,7 @@ const BODY_ROUTE_POINTS = Object.freeze({
     muscle: { x: 0.615, y: 0.59 },
     glycogen: { x: 0.56, y: 0.375 },
     storage: { x: 0.55, y: 0.47 },
+    fatUse: { x: 0.585, y: 0.67 },
     pool: { x: 0.50, y: 0.405 }
 });
 
@@ -1716,6 +2839,20 @@ function directRoute(from, to) {
 }
 
 
+function reserveReleaseRoute(from, to, laneX) {
+
+    const verticalDistance =
+        to.y - from.y;
+
+    return [
+        `M ${from.x} ${from.y}`,
+        `C ${laneX} ${routeNumber(from.y + verticalDistance * 0.18)},`,
+        `${laneX} ${routeNumber(to.y - verticalDistance * 0.18)},`,
+        `${to.x} ${to.y}`
+    ].join(" ");
+}
+
+
 function setRoutePath(id, pathData) {
 
     const path =
@@ -1767,12 +2904,14 @@ function updateRouteGeometry() {
         repairCard: routeElementAnchor(".destination-repair", "left"),
         glycogenCard: routeElementAnchor(".destination-glycogen", "left"),
         storageCard: routeElementAnchor(".destination-storage", "left"),
+        fatUseCard: routeElementAnchor(".destination-fat-use", "left"),
         brain: bodyRoutePoint("brain"),
         liver: bodyRoutePoint("liver"),
         muscle: bodyRoutePoint("muscle"),
         repair: bodyRoutePoint("repair"),
         glycogen: bodyRoutePoint("glycogen"),
         storage: bodyRoutePoint("storage"),
+        fatUse: bodyRoutePoint("fatUse"),
         pool: bodyRoutePoint("pool")
     };
 
@@ -1815,17 +2954,24 @@ function updateRouteGeometry() {
         "routeStorageOut",
         horizontalRoute(anchors.storage, anchors.storageCard, 0.38, 0.26)
     );
+    setRoutePath(
+        "routeFatUseOut",
+        horizontalRoute(anchors.fatUse, anchors.fatUseCard, 0.34, 0.24)
+    );
 
-    const releaseToStorage =
-        horizontalRoute(anchors.storageCard, anchors.storage, 0.34, 0.28);
+    const releaseOrigin = {
+        x: routeNumber(anchors.storageCard.x - 10),
+        y: routeNumber(anchors.storageCard.y + 24)
+    };
 
-    const storageToPool =
-        directRoute(anchors.storage, anchors.pool)
-            .replace(/^M [^C]+/, "");
+    const releaseLaneX = routeNumber(Math.min(
+        anchors.fatUseCard.x - 58,
+        Math.max(anchors.storage.x, anchors.fatUse.x) + 118
+    ));
 
     setRoutePath(
         "routeStoredRelease",
-        `${releaseToStorage} ${storageToPool}`
+        reserveReleaseRoute(releaseOrigin, anchors.fatUse, releaseLaneX)
     );
 
     const sourceTerminals = {
@@ -1840,11 +2986,12 @@ function updateRouteGeometry() {
 
     const targetTerminals = {
         fuel: anchors.brainCard,
-        fatUse: anchors.liverCard,
+        liver: anchors.liverCard,
         muscle: anchors.muscleCard,
         repair: anchors.repairCard,
         glycogen: anchors.glycogenCard,
-        storage: anchors.storageCard
+        storage: anchors.storageCard,
+        fatUse: anchors.fatUseCard
     };
 
     Object.entries(targetTerminals).forEach(([name, point]) => {
@@ -1892,6 +3039,7 @@ function updateRouteGeometry() {
         anchors.repair,
         anchors.storage,
         anchors.glycogen,
+        anchors.fatUse,
         anchors.muscle
     ].forEach((point, index) => {
         setRouteNode(circulationNodes[index], point);
@@ -1930,13 +3078,28 @@ function updateRouteGeometry() {
         document.querySelector(".release-label");
 
     if (releaseLabel) {
+        const bodyRect =
+            bodyAnatomy.getBoundingClientRect();
+
+        const bodyRight = clientPointToRouteSpace(
+            bodyRect.right,
+            bodyRect.top + bodyRect.height / 2
+        );
+
+        const releaseLabelX = routeNumber(
+            (bodyRight.x + anchors.fatUseCard.x) / 2
+        );
+
         releaseLabel.setAttribute(
             "x",
-            routeNumber((anchors.storage.x + anchors.storageCard.x) / 2)
+            releaseLabelX
         );
+        releaseLabel.querySelectorAll("tspan").forEach(line => {
+            line.setAttribute("x", releaseLabelX);
+        });
         releaseLabel.setAttribute(
             "y",
-            routeNumber(Math.max(anchors.storage.y, anchors.storageCard.y) + 24)
+            routeNumber((releaseOrigin.y + anchors.fatUse.y) / 2 - 24)
         );
         releaseLabel.setAttribute("text-anchor", "middle");
     }
@@ -2008,10 +3171,10 @@ function setFlowMotionPaused(paused) {
     motionToggle.setAttribute(
         "aria-label",
         paused
-            ? "Play animated fuel flow"
-            : "Pause animated fuel flow"
+            ? "Play motion"
+            : "Pause motion"
     );
-    motionToggleText.textContent = paused ? "Play" : "Pause";
+    motionToggleText.textContent = paused ? "Play motion" : "Pause motion";
     motionIcon.textContent = paused ? "▶" : "∿";
 }
 
@@ -2046,8 +3209,154 @@ if (reducedMotionPreference.addEventListener) {
 }
 
 
+/*
+ * Narrow bridge for the optional guided layer. Lesson state uses the same
+ * rendering and model pathways as the explorer, while keeping temporary guide
+ * transitions out of the normal Clear/Undo history.
+ */
+window.BodyFuelExplorerGuideBridge = Object.freeze({
+    capture() {
+        return {
+            explorer: createExplorerSnapshot(),
+            foodLines: cloneLines(foodExperience.lines),
+            filter: foodExperience.filter,
+            scrollTop: foodElements.grid.scrollTop,
+            dayKind: foodExperience.dayKind,
+            source: foodExperience.source,
+            lastClearedLines: foodExperience.lastClearedLines
+                ? cloneLines(foodExperience.lastClearedLines)
+                : null,
+            undoClearHidden: foodElements.undoClear.hidden,
+            browserStatus: foodElements.browserStatus.textContent
+        };
+    },
+
+    restore(snapshot) {
+        if (!snapshot?.explorer) return false;
+
+        const explorer = snapshot.explorer;
+        foodExperience.lines = cloneLines(snapshot.foodLines || []);
+        foodExperience.filter = foodCategories.some(category =>
+            category.id === snapshot.filter && category.id !== "all"
+        ) ? snapshot.filter : "breakfast";
+        foodExperience.dayKind = ["example", "custom", "empty"].includes(snapshot.dayKind)
+            ? snapshot.dayKind
+            : (foodExperience.lines.length ? "custom" : "empty");
+        foodExperience.source = explorer.foodSource === "manual" ? "manual" : "foods";
+        foodExperience.lastClearedLines = snapshot.lastClearedLines
+            ? cloneLines(snapshot.lastClearedLines)
+            : null;
+        foodExperience.experimentUndo = null;
+        foodExperience.lastChange = { type: "guide-restore" };
+
+        macroKeys.forEach(key => {
+            restoreRangeValue(controls[key], explorer.macros?.[key]);
+            planner.locks[key] = explorer.locks?.[key] === true;
+        });
+        restoreRangeValue(controls.activity, explorer.activity);
+        restoreRangeValue(controls.time, explorer.time);
+        planner.calorieTarget = Number.isFinite(Number(explorer.calorieTarget))
+            ? Number(explorer.calorieTarget)
+            : planner.calorieTarget;
+        planner.weightUnit = explorer.weightUnit === "kg" ? "kg" : "lb";
+        plannerElements.weightUnit.value = planner.weightUnit;
+        plannerElements.currentWeight.value = explorer.currentWeight || "";
+        plannerElements.targetWeight.value = explorer.targetWeight || "";
+        motionUserOverride = explorer.motionUserOverride === true;
+        setFlowMotionPaused(explorer.flowMotionPaused === true);
+
+        renderFoodBrowser();
+        foodElements.undoClear.hidden = snapshot.undoClearHidden !== false;
+        foodElements.browserStatus.textContent = snapshot.browserStatus || "";
+        setFoodSource(foodExperience.source);
+        renderTray();
+        if (foodExperience.source === "foods") syncFoodTotalsToControls();
+        calculate();
+
+        window.requestAnimationFrame(() => {
+            foodElements.grid.scrollTop = Number(snapshot.scrollTop) || 0;
+        });
+        return true;
+    },
+
+    loadScenario(lines, options = {}) {
+        foodExperience.lines = cloneLines(lines)
+            .filter(entry => catalogById[entry.foodId] && Number(entry.quantity) > 0);
+        foodExperience.dayKind = foodExperience.lines.length ? "custom" : "empty";
+        foodExperience.source = "foods";
+        foodExperience.lastClearedLines = null;
+        foodExperience.experimentUndo = null;
+        foodExperience.lastChange = { type: "guide-scenario" };
+        controls.activity.value = fixedActivityContext.index;
+        controls.time.value = String(Number(options.timeline ?? 0));
+        if (options.filter && foodCategories.some(category => category.id === options.filter)) {
+            foodExperience.filter = options.filter;
+        }
+        foodElements.undoClear.hidden = true;
+        renderFoodBrowser();
+        refreshFoodExperience();
+        foodElements.grid.scrollTop = 0;
+    },
+
+    clearLesson() {
+        foodExperience.lines = [];
+        foodExperience.filter = "breakfast";
+        foodExperience.dayKind = "empty";
+        foodExperience.source = "foods";
+        foodExperience.lastClearedLines = null;
+        foodExperience.experimentUndo = null;
+        foodExperience.lastChange = { type: "empty" };
+        controls.activity.value = fixedActivityContext.index;
+        controls.time.value = "0";
+        foodElements.undoClear.hidden = true;
+        renderFoodBrowser();
+        refreshFoodExperience();
+        foodElements.browserStatus.textContent =
+            "Lesson cleared. Add a food when you are ready to build a modeled day.";
+    },
+
+    revealFood(foodId) {
+        const item = catalogById[foodId];
+        if (!item) return null;
+        const category = item.groups.find(group => group !== "all") || "breakfast";
+        if (foodExperience.filter !== category) {
+            foodExperience.filter = category;
+            renderFoodBrowser();
+        }
+        const wrapper = foodElements.grid.querySelector(`[data-food-id="${foodId}"]`);
+        if (wrapper) {
+            const rowTop = Math.max(0, wrapper.offsetTop - foodElements.grid.offsetTop);
+            foodElements.grid.scrollTop = rowTop;
+        }
+        persistExplorerSnapshot();
+        return wrapper?.querySelector(".catalog-portion-increase") || null;
+    },
+
+    getQuantity(foodId) {
+        return Number(foodExperience.lines.find(entry => entry.foodId === foodId)?.quantity || 0);
+    },
+
+    getState() {
+        return {
+            foodLines: cloneLines(foodExperience.lines),
+            filter: foodExperience.filter,
+            timeline: Number(controls.time.value),
+            source: foodExperience.source,
+            motionPaused: flowMotionPaused,
+            reducedMotion: reducedMotionPreference.matches,
+            state: foodExperience.currentState
+        };
+    },
+
+    persist: persistExplorerSnapshot
+});
+
+
 const restoredExplorerSnapshot =
     restoreExplorerSnapshot();
+
+/* Everyday Movement remains the fixed reference for the simplified core. */
+controls.activity.value = 1;
 
 if (restoredExplorerSnapshot?.motionUserOverride === true) {
     motionUserOverride = true;
@@ -2084,7 +3393,7 @@ const welcomeLearnLink =
     document.getElementById("welcomeLearnLink");
 
 const welcomeStorageKey =
-    "bodyFuelExplorerWelcomeV1";
+    "bodyFuelExplorerWelcomeV2";
 
 
 function hasSeenWelcome() {
@@ -2167,7 +3476,7 @@ welcomeExploreButton.addEventListener("click", () => {
     closeWelcomeDialog("explore");
 
     window.setTimeout(() => {
-        plannerElements.calorieTarget.focus();
+        document.querySelector(".food-tile")?.focus();
     }, 0);
 });
 
@@ -2185,12 +3494,23 @@ welcomeDialog.addEventListener("click", event => {
 });
 
 
+placeCoreExperienceInReadingOrder();
+foodElements.grid.addEventListener("focusin", revealFocusedFoodRow);
+renderFoodBrowser();
+setExperienceView(foodExperience.viewMode, { persist: false });
+setFoodSource(foodExperience.source);
+renderTray();
+
+if (foodExperience.source === "foods") {
+    syncFoodTotalsToControls();
+}
+
 updateWeightUnitAccessibility();
 calculate();
 scheduleRouteGeometryUpdate();
 
 window.requestAnimationFrame(() => {
-    if (!hasSeenWelcome()) {
+    if (!document.body.classList.contains("core-mode") && !hasSeenWelcome()) {
         window.setTimeout(openWelcomeDialog, 180);
     }
 });

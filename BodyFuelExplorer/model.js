@@ -675,7 +675,9 @@
                 storage,
                 glycogen,
                 balance,
-                horizon
+                horizon,
+                calories,
+                energyDemand
             } = state;
 
             const caloriesByMacro = {
@@ -745,6 +747,37 @@
                         value + relativePriority * 0.22
                     );
                 });
+
+            /*
+             * Reversible teaching assumption: conceptual liver-processing load
+             * grows with incoming energy relative to the fixed demand scenario
+             * and with a more mixed energy-providing pattern. This is not an
+             * organ-health, toxicity, disease, or measured-performance score.
+             */
+            const incomingEnergyLoad = clamp(
+                (calories / Math.max(1, energyDemand)) * 100,
+                0,
+                150
+            );
+            const macroShareConcentration =
+                Object.values(caloriesByMacro)
+                    .reduce((sum, value) => {
+                        const share = value / totalCalories;
+                        return sum + share * share;
+                    }, 0);
+            const mixDiversity = clamp(
+                ((1 - macroShareConcentration) / (2 / 3)) * 100
+            );
+            const liverSignal = calories > 0
+                ? clamp(
+                    22 +
+                    incomingEnergyLoad * 0.34 +
+                    mixDiversity * 0.18
+                )
+                : 0;
+
+            destinations.liver = liverSignal;
+            strengths.liver = liverSignal;
 
             const release =
                 clamp((-balance - 150) / 12);

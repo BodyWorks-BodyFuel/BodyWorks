@@ -12,10 +12,10 @@
     <meta name="copyright" content="Copyright © 2026 Anthony Adams. All rights reserved.">
     <title>Body Fuel Flow Explorer</title>
     <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="style.css?v=20260816-2">
+    <link rel="stylesheet" href="style.css?v=20260819-34">
 </head>
 
-<body>
+<body class="core-mode">
 
 <a class="skip-link" href="#explorerMain">Skip to explorer</a>
 
@@ -27,219 +27,120 @@
             <div>
                 <h1>Body Fuel Flow Explorer</h1>
                 <p>
-                    One machine. Different inputs. Different demand.
-                    <button type="button" class="welcome-open" id="welcomeOpenButton">Start Here</button>
-                    <a class="learn-link" href="learn.html?from=explorer">How This Works <span aria-hidden="true">→</span></a>
+                    Choose foods. Watch the pattern respond. Then explore the timeline.
+                    <button type="button" class="welcome-open legacy-backstage" id="welcomeOpenButton" hidden tabindex="-1">Start Here</button>
+                    <a class="learn-link legacy-backstage" href="learn.html?from=explorer" hidden tabindex="-1">How This Works <span aria-hidden="true">→</span></a>
                 </p>
             </div>
         </div>
 
-        <div class="presets" role="group" aria-label="Example fuel and demand scenarios">
-            <span class="preset-label">Presets</span>
+        <button type="button" class="guide-replay" id="guideReplayButton">
+            Show me how this works
+        </button>
 
-            <button type="button" data-preset="everyday" class="preset active" aria-pressed="true">
-                Everyday Baseline
-            </button>
-
-            <button type="button" data-preset="matched" class="preset" aria-pressed="false">
-                Well-Matched Active
-            </button>
-
-            <button type="button" data-preset="under" class="preset" aria-pressed="false">
-                Under-Fueled Active
-            </button>
-
-            <button type="button" data-preset="carb" class="preset" aria-pressed="false">
-                Higher Carb
-            </button>
-
-            <button type="button" data-preset="fat" class="preset" aria-pressed="false">
-                Higher Fat
-            </button>
-
-            <button type="button" data-preset="protein" class="preset" aria-pressed="false">
-                Higher Protein
-            </button>
-
-            <button type="button" data-preset="oversupplied" class="preset" aria-pressed="false">
-                Over-Supplied
-            </button>
-
-            <button type="button" class="reset-button" id="resetButton" aria-label="Reset the planner and controls to the Everyday Baseline model example">
-                ↻ Reset
-            </button>
-        </div>
     </header>
 
 
-    <main class="workspace" id="explorerMain" tabindex="-1">
+    <main class="workspace core-workspace" id="explorerMain" tabindex="-1" data-view="core">
 
-        <!-- LEFT CONTROLS -->
-        <aside class="panel controls-panel" aria-label="Explorer controls">
+        <nav class="experience-nav legacy-backstage" aria-label="Explorer views" hidden inert aria-hidden="true">
+            <button type="button" class="experience-tab active" id="buildViewButton" aria-pressed="true" aria-controls="buildViewRegion">Build My Day</button>
+            <button type="button" class="experience-tab" id="seeViewButton" aria-pressed="false" aria-controls="seeViewRegion">See What Happens</button>
+        </nav>
 
-            <section>
-                <div class="section-heading">
-                    <h2>Fuel Inputs</h2>
-                    <span>Plan a daily supply, then explore the routing</span>
+        <section class="build-start legacy-backstage" id="buildViewRegion" aria-labelledby="buildStartTitle" hidden inert aria-hidden="true">
+            <div>
+                <span class="view-kicker">BUILD MY DAY</span>
+                <h2 id="buildStartTitle">Start with familiar foods and portions.</h2>
+                <p>Use the example to explore, or clear it and build something closer to your day.</p>
+            </div>
+            <div class="example-controls" role="group" aria-label="Choose a starting day">
+                <button type="button" class="example-day-button active" id="loadExampleDay" aria-pressed="true">
+                    Explore a Familiar Example
+                </button>
+                <button type="button" class="clear-start-button" id="clearStartButton">
+                    Build My Own Day
+                </button>
+                <button type="button" class="reset-button" id="resetButton" aria-label="Reset to the Familiar Meals Example">
+                    ↻ Reset
+                </button>
+            </div>
+        </section>
+
+        <section class="body-teaser legacy-backstage" aria-labelledby="teaserTitle" aria-describedby="teaserMessage" hidden inert aria-hidden="true">
+            <div class="teaser-copy">
+                <span class="view-kicker">LIVE BODY PREVIEW</span>
+                <h2 id="teaserTitle">The whole pattern is responding.</h2>
+                <p id="teaserMessage">The example’s combined foods are being interpreted with Everyday Movement and Today.</p>
+            </div>
+            <div class="simple-body" id="teaserBody" data-emphasis="whole" role="img" aria-label="Simplified glowing body preview showing that the conceptual model has updated">
+                <span class="simple-route simple-route-a" aria-hidden="true"></span>
+                <span class="simple-route simple-route-b" aria-hidden="true"></span>
+                <span class="simple-route simple-route-c" aria-hidden="true"></span>
+                <img src="assets/body/body-anatomical-v4-alpha.png" width="887" height="1774" alt="" draggable="false">
+            </div>
+            <button type="button" class="see-body-button" data-view-target="see">See the Body <span aria-hidden="true">→</span></button>
+        </section>
+
+        <!-- FOOD-FIRST CONTROLS -->
+        <aside class="panel controls-panel" aria-label="Food selection">
+
+            <section class="food-browser-section" id="foodBrowserSection">
+                <div class="section-heading core-food-heading">
+                    <div>
+                        <h2>Choose foods</h2>
+                        <span>Add one familiar portion at a time</span>
+                    </div>
+                    <button type="button" class="info-button core-info-button" aria-label="About representative food portions" data-core-explanation="food-portions">i</button>
                 </div>
-
-                <div class="goal-planner">
-                    <div class="planner-heading">
-                        <span class="label-with-info">
-                            <strong>Body Goal Context</strong>
-                            <button type="button" class="info-button" aria-label="About body goal context" data-learn-target="goal-direction" data-tooltip-title="Body goal context" data-tooltip="Current and target weight establish direction only. They compare the selected example or manual scenario with that direction; they do not adjust activity, calories, macros or duration, and they do not create a personalized recommendation or predict timing.">i</button>
-                        </span>
-                        <span>Optional context</span>
+                <p class="food-browser-intro">Broad, familiar examples for exploring the model—never grades or prescriptions.</p>
+                <div class="food-workspace-bar">
+                    <div class="food-workspace-actions">
+                        <div class="estimated-energy-summary">
+                            <span id="selectedFoodCount">0 foods selected</span>
+                            <strong>
+                                Estimated food energy:
+                                <output id="estimatedFoodEnergy" aria-live="polite" aria-atomic="true" aria-label="Estimated food energy approximately 0 kilocalories">≈ 0 kcal</output>
+                            </strong>
+                            <span class="model-energy-context" id="modelEnergyContext"></span>
+                            <button type="button" class="info-button core-info-button energy-info-button" aria-label="About estimated food energy" data-core-explanation="estimated-energy">i</button>
+                        </div>
+                        <button type="button" class="clear-foods-action is-inactive" id="clearFoodsButton" aria-label="Clear all selected foods" aria-disabled="true">Clear foods</button>
+                        <button type="button" class="undo-clear" id="undoClearButton" hidden>Undo clear</button>
                     </div>
-
-                    <div class="weight-fields">
-                        <label class="weight-field" for="currentWeight">
-                            <span>Current weight</span>
-                            <input id="currentWeight" type="number" min="1" max="1200" step="0.1" inputmode="decimal" placeholder="—">
-                        </label>
-
-                        <label class="weight-field" for="targetWeight">
-                            <span>Target weight</span>
-                            <input id="targetWeight" type="number" min="1" max="1200" step="0.1" inputmode="decimal" placeholder="—">
-                        </label>
-
-                        <label class="weight-unit" for="weightUnit">
-                            <span>Unit</span>
-                            <select id="weightUnit">
-                                <option value="lb">lb</option>
-                                <option value="kg">kg</option>
-                            </select>
-                        </label>
-                    </div>
-
-                    <div class="trajectory-card" id="trajectoryCard" data-state="setup" aria-live="polite" aria-atomic="true">
-                        <span class="trajectory-icon" id="trajectoryIcon" aria-hidden="true">○</span>
-                        <span>
-                            <small>Trajectory</small>
-                            <strong id="trajectoryLabel">Add weights to see direction</strong>
-                            <em id="trajectoryDetail">Enter both weights to compare this scenario with a target direction.</em>
-                        </span>
-                    </div>
+                    <div class="food-filters" id="foodFilters" role="tablist" aria-label="Food categories"></div>
                 </div>
+                <div class="food-grid" id="foodGrid" aria-label="Food choices"></div>
+                <p class="food-browser-status" id="foodBrowserStatus" role="status" aria-live="polite"></p>
 
-                <div class="control calorie-control">
-                    <div class="control-row">
-                        <span class="label-with-info">
-                            <label for="calorieTarget">Approximate Fuel In</label>
-                            <button type="button" class="info-button" aria-label="About approximate fuel in" data-learn-target="approximate-fuel-in" data-tooltip-title="Approximate fuel in" data-tooltip="This calorie budget uses the 4 / 4 / 9 relationship: protein provides about 4 kcal per gram, carbohydrates 4 kcal per gram and fat 9 kcal per gram. It is an educational estimate, not a personal prescription.">i</button>
-                        </span>
-                        <strong><span id="calories">2,150</span> kcal</strong>
+                <section class="today-section core-my-day legacy-backstage" id="coreMyDay" aria-labelledby="todayFoodsHeading" hidden inert aria-hidden="true">
+                    <div class="section-heading tray-heading">
+                        <div>
+                            <h2 id="todayFoodsHeading">My Day</h2>
+                            <span id="daySummary">No foods added yet</span>
+                        </div>
+                        <button type="button" class="tray-clear" id="clearDayButton">Clear</button>
                     </div>
-
-                    <input
-                        id="calorieTarget"
-                        type="range"
-                        min="800"
-                        max="4500"
-                        step="1"
-                        value="2150"
-                        aria-valuetext="2,150 kilocalories"
-                    >
-
-                    <div class="starting-balance">
-                        <span>
-                            <small>Proposed starting balance</small>
-                            <strong>25% P · 45% C · 30% F</strong>
-                        </span>
-                        <button type="button" id="resetMixButton" aria-label="Reset unlocked macros to the proposed starting balance">Reset Mix</button>
+                    <p class="example-note legacy-backstage" id="exampleNote" hidden>For exploring the model—not a suggested menu or nutrition recommendation.</p>
+                    <div class="tray-list" id="foodTray" aria-label="Foods included in My Day"></div>
+                    <div class="tray-empty" id="trayEmpty">
+                        <strong>Your day is ready to build.</strong>
+                        <span>Choose a category, then add a familiar portion.</span>
                     </div>
-
-                    <p class="calorie-status" id="calorieStatus" role="status" aria-atomic="true">Everyday Baseline model example loaded. Its fuel and demand values are not personalized recommendations.</p>
-                </div>
-
-                <div class="control protein">
-                    <div class="control-row">
-                        <span class="label-with-info">
-                            <label for="protein">Protein</label>
-                            <button type="button" class="info-button" aria-label="About protein input" data-learn-target="protein" data-tooltip-title="Protein input" data-tooltip="Supports tissue maintenance and rebuilding in this model. Protein-rich examples include eggs, fish, meat, dairy, tofu, tempeh and legumes. Foods usually contain more than one macronutrient; this does not predict muscle gain.">i</button>
-                        </span>
-                        <span class="macro-value">
-                            <strong><span id="proteinValue">134</span> g</strong>
-                            <button type="button" class="macro-lock" data-macro="protein" aria-pressed="false" aria-label="Protein lock at 134 grams">
-                                <span class="lock-symbol" aria-hidden="true"></span>
-                                <span class="lock-label">Lock</span>
-                            </button>
-                        </span>
-                    </div>
-
-                    <input
-                        id="protein"
-                        type="range"
-                        min="40"
-                        max="250"
-                        value="134"
-                        aria-valuetext="134 grams"
-                    >
-                </div>
-
-                <div class="control carbs">
-                    <div class="control-row">
-                        <span class="label-with-info">
-                            <label for="carbs">Carbohydrates</label>
-                            <button type="button" class="info-button" aria-label="About carbohydrate input" data-learn-target="carbohydrates" data-tooltip-title="Carbohydrate input" data-tooltip="Commonly supports readily available energy and glycogen stores. Examples include grains, fruit, beans, potatoes and other starchy vegetables. Foods usually contain more than one macronutrient.">i</button>
-                        </span>
-                        <span class="macro-value">
-                            <strong><span id="carbsValue">246</span> g</strong>
-                            <button type="button" class="macro-lock" data-macro="carbs" aria-pressed="false" aria-label="Carbohydrates lock at 246 grams">
-                                <span class="lock-symbol" aria-hidden="true"></span>
-                                <span class="lock-label">Lock</span>
-                            </button>
-                        </span>
-                    </div>
-
-                    <input
-                        id="carbs"
-                        type="range"
-                        min="40"
-                        max="500"
-                        value="246"
-                        aria-valuetext="246 grams"
-                    >
-                </div>
-
-                <div class="control fats">
-                    <div class="control-row">
-                        <span class="label-with-info">
-                            <label for="fats">Fats</label>
-                            <button type="button" class="info-button" aria-label="About fat input" data-learn-target="fats" data-tooltip-title="Fat input" data-tooltip="Provides concentrated energy and contributes to the modeled fuel mix. Examples include oils, nuts, seeds, avocado, olives and fatty fish. Foods usually contain more than one macronutrient; dietary fat is not the same as body-fat storage.">i</button>
-                        </span>
-                        <span class="macro-value">
-                            <strong><span id="fatsValue">70</span> g</strong>
-                            <button type="button" class="macro-lock" data-macro="fats" aria-pressed="false" aria-label="Fats lock at 70 grams">
-                                <span class="lock-symbol" aria-hidden="true"></span>
-                                <span class="lock-label">Lock</span>
-                            </button>
-                        </span>
-                    </div>
-
-                    <input
-                        id="fats"
-                        type="range"
-                        min="20"
-                        max="180"
-                        value="70"
-                        aria-valuetext="70 grams"
-                    >
-                </div>
-
+                    <p class="timing-note">The model combines these selections as one daily pattern; it does not simulate meal timing.</p>
+                </section>
             </section>
 
-
-            <section>
+            <section class="activity-section legacy-backstage" hidden inert aria-hidden="true">
                 <div class="section-heading">
-                    <h2>Body Demand</h2>
+                    <h2>How did you move today?</h2>
                     <span>Choose a reference daily activity pattern</span>
                 </div>
 
                 <div class="control demand activity-control">
                     <div class="control-row">
                         <span class="label-with-info">
-                            <label for="activity">Activity pattern</label>
+                            <label for="activity">Movement pattern</label>
                             <button type="button" class="info-button" aria-label="About activity demand" data-learn-target="activity-demand" data-tooltip-title="Activity pattern" data-tooltip="Select a reference type of day. Each profile gives the model a transparent fuel-demand anchor and changes routing toward working tissue. These anchors do not use your weight and are not estimates of personal calorie burn or exercise calories.">i</button>
                         </span>
                         <strong id="activityLabel">Everyday Movement</strong>
@@ -274,58 +175,78 @@
 
             </section>
 
+        </aside>
 
-            <section>
-                <div class="section-heading">
-                    <h2>Viewing Horizon</h2>
-                    <span>Imagine this daily pattern repeating</span>
+        <section class="horizon-section" id="patternTimelineSection" aria-labelledby="timelineHeading">
+            <div class="section-heading">
+                <div>
+                    <h2 id="timelineHeading">Pattern Timeline</h2>
+                    <span>If this same day repeats, how might the model’s priorities change?</span>
+                </div>
+                <button type="button" class="info-button core-info-button" aria-label="About the Pattern Timeline" data-core-explanation="timeline">i</button>
+            </div>
+
+            <div class="control adaptation horizon-control">
+                <div class="control-row">
+                    <span class="label-with-info">
+                        <label for="time">Repeated-pattern lens</label>
+                    </span>
+                    <strong id="timeLabel">Today</strong>
                 </div>
 
-                <div class="control adaptation horizon-control">
-                    <div class="control-row">
-                        <span class="label-with-info">
-                            <label for="time">Pattern duration</label>
-                            <button type="button" class="info-button" aria-label="About the viewing horizon" data-learn-target="viewing-horizon" data-tooltip-title="Viewing horizon" data-tooltip="Select how long to imagine the current daily fuel and activity pattern repeating. Longer views make sustained repair, storage or stored-fuel use more visible. This changes the model's perspective; it does not advance time, set a deadline or predict an outcome.">i</button>
-                        </span>
-                        <strong id="timeLabel">Today</strong>
-                    </div>
+                <input
+                    id="time"
+                    type="range"
+                    min="0"
+                    max="3"
+                    step="1"
+                    value="0"
+                    aria-valuetext="Today"
+                    aria-describedby="horizonDescription"
+                >
 
-                    <input
-                        id="time"
-                        type="range"
-                        min="0"
-                        max="3"
-                        step="1"
-                        value="0"
-                        aria-valuetext="Today"
-                        aria-describedby="horizonDescription"
-                    >
-
-                    <div class="horizon-scale" aria-hidden="true">
-                        <span data-horizon="0" class="is-active">Today</span>
-                        <span data-horizon="1">Days</span>
-                        <span data-horizon="2">Weeks</span>
-                        <span data-horizon="3">Months</span>
-                    </div>
-
-                    <p class="horizon-description" id="horizonDescription">
-                        Emphasizing immediate routing from today's inputs and activity demand.
-                    </p>
+                <div class="horizon-scale timeline-options" role="group" aria-label="Pattern Timeline options">
+                    <button type="button" data-timeline="0" class="is-active" aria-pressed="true">Today</button>
+                    <button type="button" data-timeline="1" aria-pressed="false">Days</button>
+                    <button type="button" data-timeline="2" aria-pressed="false">Weeks</button>
+                    <button type="button" data-timeline="3" aria-pressed="false">Months</button>
                 </div>
-            </section>
 
+                <p class="horizon-description" id="horizonDescription">
+                    Emphasizing immediate routing from today's inputs and activity demand.
+                </p>
+            </div>
+        </section>
+
+        <aside class="live-body-dock legacy-backstage" id="mobileDaySummary" aria-label="Live Body update" hidden inert aria-hidden="true">
+            <div class="dock-body simple-body" id="dockBody" data-emphasis="whole" aria-hidden="true">
+                <span class="simple-route simple-route-a"></span>
+                <span class="simple-route simple-route-b"></span>
+                <img src="assets/body/body-anatomical-v4-alpha.png" width="887" height="1774" alt="" draggable="false">
+            </div>
+            <div class="dock-copy">
+                <span>LIVE BODY · <strong id="mobileDayCount">12 foods</strong></span>
+                <p id="liveBodyMessage">The whole example pattern is active.</p>
+            </div>
+            <button type="button" data-view-target="see">See the Body</button>
         </aside>
 
 
         <!-- CENTER BODY STAGE -->
-        <section class="body-stage" aria-labelledby="routingMapTitle" aria-describedby="stateTitle stateDescription">
+        <section class="body-stage" id="seeViewRegion" aria-labelledby="routingMapTitle" aria-describedby="stateTitle stateDescription">
 
             <div class="stage-label">
-                <span>LIVE ROUTING MAP</span>
-                <h2 id="routingMapTitle">
-                    One Body, Changing Priorities
-                    <button type="button" class="info-button" aria-label="About the routing map" data-learn-target="machine" data-tooltip-title="How to read the map" data-tooltip="Line color identifies the fuel or destination. Thickness, brightness, particle quantity and speed show relative flow strength. Thin dotted branches inside the body show where a fuel can share across related tissues or stores. Dotted amber flow returning to circulation represents stored-fuel release. These are conceptual relationships, not literal vessels or one-to-one metabolic pathways.">i</button>
-                </h2>
+                <div class="stage-title-copy">
+                    <span>LIVE ROUTING MAP</span>
+                    <h2 id="routingMapTitle">
+                        One Body, Changing Priorities
+                        <button type="button" class="info-button" aria-label="About the routing map" data-learn-target="machine" data-tooltip-title="How to read the map" data-tooltip="Line color identifies the fuel or body response. Thickness, brightness, particle quantity and speed show relative flow strength. Thin dotted branches inside the body show where a fuel can share across related tissues or stores. Dotted amber flow toward current use represents stored reserves released. These are conceptual relationships, not literal vessels or one-to-one metabolic pathways.">i</button>
+                    </h2>
+                </div>
+                <button type="button" class="motion-toggle" id="motionToggle" aria-label="Pause motion">
+                    <span class="motion-icon" aria-hidden="true">∿</span>
+                    <strong id="motionToggleText">Pause motion</strong>
+                </button>
             </div>
 
             <div class="routing-stage" data-balance-state="matched">
@@ -380,7 +301,8 @@
                         <path id="routeRepairOut" d="M 540 145 C 632 232, 720 334, 845 345"></path>
                         <path id="routeGlycogenOut" d="M 525 340 C 622 412, 720 412, 845 410"></path>
                         <path id="routeStorageOut" d="M 515 285 C 610 420, 718 470, 845 475"></path>
-                        <path id="routeStoredRelease" d="M 845 495 C 718 530, 610 440, 515 285 C 508 270, 503 258, 500 250"></path>
+                        <path id="routeFatUseOut" d="M 535 420 C 635 440, 720 515, 845 540"></path>
+                        <path id="routeStoredRelease" d="M 515 285 C 650 302, 650 390, 535 420"></path>
                     </defs>
 
                     <!-- A quiet circulation scaffold keeps the body—not a text orb—at the center of the model. -->
@@ -448,14 +370,14 @@
                         <circle class="route-particle route-particle-tertiary" r="4"><animateMotion dur="3.4s" begin="-2.2s" repeatCount="indefinite"><mpath href="#routeBrainOut" xlink:href="#routeBrainOut"></mpath></animateMotion></circle>
                     </g>
 
-                    <g class="route-channel channel-fatUse" data-route="fatUse">
+                    <g class="route-channel channel-liver" data-route="liver">
                         <use class="route-envelope" href="#routeLiverOut" xlink:href="#routeLiverOut"></use>
-                        <use class="route-path route-path-core route-path-fat-use" href="#routeLiverOut" xlink:href="#routeLiverOut"></use>
+                        <use class="route-path route-path-core route-path-liver" href="#routeLiverOut" xlink:href="#routeLiverOut"></use>
                         <use class="route-filament" href="#routeLiverOut" xlink:href="#routeLiverOut"></use>
                         <circle class="route-terminal route-terminal-target" cx="845" cy="215" r="4"></circle>
-                        <circle class="route-particle" r="6"><animateMotion dur="3.8s" repeatCount="indefinite"><mpath href="#routeLiverOut" xlink:href="#routeLiverOut"></mpath></animateMotion></circle>
-                        <circle class="route-particle route-particle-small" r="5"><animateMotion dur="3.8s" begin="-1.25s" repeatCount="indefinite"><mpath href="#routeLiverOut" xlink:href="#routeLiverOut"></mpath></animateMotion></circle>
-                        <circle class="route-particle route-particle-tertiary" r="4"><animateMotion dur="3.8s" begin="-2.5s" repeatCount="indefinite"><mpath href="#routeLiverOut" xlink:href="#routeLiverOut"></mpath></animateMotion></circle>
+                        <circle class="route-particle" r="5"><animateMotion dur="4.1s" repeatCount="indefinite"><mpath href="#routeLiverOut" xlink:href="#routeLiverOut"></mpath></animateMotion></circle>
+                        <circle class="route-particle route-particle-small" r="4"><animateMotion dur="4.1s" begin="-1.37s" repeatCount="indefinite"><mpath href="#routeLiverOut" xlink:href="#routeLiverOut"></mpath></animateMotion></circle>
+                        <circle class="route-particle route-particle-tertiary" r="3"><animateMotion dur="4.1s" begin="-2.73s" repeatCount="indefinite"><mpath href="#routeLiverOut" xlink:href="#routeLiverOut"></mpath></animateMotion></circle>
                     </g>
 
                     <g class="route-channel channel-muscle" data-route="muscle">
@@ -498,13 +420,26 @@
                         <circle class="route-particle route-particle-tertiary" r="4"><animateMotion dur="4.5s" begin="-3s" repeatCount="indefinite"><mpath href="#routeStorageOut" xlink:href="#routeStorageOut"></mpath></animateMotion></circle>
                     </g>
 
-                    <!-- This route reverses the direction when demand exceeds supply. -->
+                    <g class="route-channel channel-fatUse" data-route="fatUse">
+                        <use class="route-envelope" href="#routeFatUseOut" xlink:href="#routeFatUseOut"></use>
+                        <use class="route-path route-path-core route-path-fat-use" href="#routeFatUseOut" xlink:href="#routeFatUseOut"></use>
+                        <use class="route-filament" href="#routeFatUseOut" xlink:href="#routeFatUseOut"></use>
+                        <circle class="route-terminal route-terminal-target" cx="845" cy="540" r="4"></circle>
+                        <circle class="route-particle" r="6"><animateMotion dur="3.8s" repeatCount="indefinite"><mpath href="#routeFatUseOut" xlink:href="#routeFatUseOut"></mpath></animateMotion></circle>
+                        <circle class="route-particle route-particle-small" r="5"><animateMotion dur="3.8s" begin="-1.25s" repeatCount="indefinite"><mpath href="#routeFatUseOut" xlink:href="#routeFatUseOut"></mpath></animateMotion></circle>
+                        <circle class="route-particle route-particle-tertiary" r="4"><animateMotion dur="3.8s" begin="-2.5s" repeatCount="indefinite"><mpath href="#routeFatUseOut" xlink:href="#routeFatUseOut"></mpath></animateMotion></circle>
+                    </g>
+
+                    <!-- Dashed motion starts at the reserve region and travels toward current use. -->
                     <g class="route-channel stored-release" data-route="release">
                         <use class="route-envelope route-envelope-release" href="#routeStoredRelease" xlink:href="#routeStoredRelease"></use>
                         <use class="route-path route-path-core route-path-release" href="#routeStoredRelease" xlink:href="#routeStoredRelease"></use>
                         <use class="route-filament route-filament-release" href="#routeStoredRelease" xlink:href="#routeStoredRelease"></use>
-                        <text class="release-label" x="632" y="510">STORED FUEL RELEASE</text>
-                        <circle class="route-particle" r="7"><animateMotion dur="3.2s" repeatCount="indefinite"><mpath href="#routeStoredRelease" xlink:href="#routeStoredRelease"></mpath></animateMotion></circle>
+                        <text class="release-label" x="650" y="345">
+                            <tspan x="650">STORED RESERVES</tspan>
+                            <tspan x="650" dy="11">RELEASED</tspan>
+                        </text>
+                        <circle class="route-particle" r="6"><animateMotion dur="3.2s" repeatCount="indefinite"><mpath href="#routeStoredRelease" xlink:href="#routeStoredRelease"></mpath></animateMotion></circle>
                         <circle class="route-particle route-particle-small" r="5"><animateMotion dur="3.2s" begin="-1.6s" repeatCount="indefinite"><mpath href="#routeStoredRelease" xlink:href="#routeStoredRelease"></mpath></animateMotion></circle>
                         <circle class="route-particle route-particle-tertiary" r="4"><animateMotion dur="3.2s" begin="-2.4s" repeatCount="indefinite"><mpath href="#routeStoredRelease" xlink:href="#routeStoredRelease"></mpath></animateMotion></circle>
                     </g>
@@ -513,26 +448,26 @@
                 <div class="routing-column input-stack" role="group" aria-labelledby="routingInputsLabel">
                     <p class="routing-kicker" id="routingInputsLabel">Inputs</p>
 
-                    <article class="route-card route-protein">
+                    <article class="route-card route-protein" tabindex="0" role="button" aria-haspopup="dialog" data-core-explanation="protein">
                         <div>
                             <strong>Protein</strong>
-                            <small><span id="stageProteinValue">134</span> g supplied</small>
+                            <small id="stageProteinValue">Present in today’s mix</small>
                         </div>
                         <img class="route-visual" src="assets/icons/biology/input-protein.png" width="512" height="512" alt="" draggable="false">
                     </article>
 
-                    <article class="route-card route-carbs">
+                    <article class="route-card route-carbs" tabindex="0" role="button" aria-haspopup="dialog" data-core-explanation="carbohydrates">
                         <div>
                             <strong>Carbohydrates</strong>
-                            <small><span id="stageCarbsValue">246</span> g supplied</small>
+                            <small id="stageCarbsValue">Present in today’s mix</small>
                         </div>
                         <img class="route-visual" src="assets/icons/biology/input-carbohydrates.png" width="512" height="512" alt="" draggable="false">
                     </article>
 
-                    <article class="route-card route-fat">
+                    <article class="route-card route-fat" tabindex="0" role="button" aria-haspopup="dialog" data-core-explanation="fats">
                         <div>
                             <strong>Fats</strong>
-                            <small><span id="stageFatsValue">70</span> g supplied</small>
+                            <small id="stageFatsValue">Present in today’s mix</small>
                         </div>
                         <img class="route-visual" src="assets/icons/biology/input-fats.png" width="512" height="512" alt="" draggable="false">
                     </article>
@@ -541,7 +476,7 @@
                 <div class="body-container">
                     <div class="body-halo"></div>
 
-                    <div class="human" role="img" aria-label="An anatomical body visualization whose highlighted brain, liver, muscle, repair, glycogen and fat-storage regions respond to the current model settings">
+                    <div class="human" role="img" aria-label="An anatomical body visualization whose highlighted brain, liver, muscle, repair, glycogen, fat-storage and fat-as-fuel signals respond to the current model settings">
                         <img
                             class="body-anatomy"
                             src="assets/body/body-anatomical-v4-alpha.png"
@@ -564,45 +499,45 @@
                 </div>
 
                 <div class="routing-column destination-stack" role="group" aria-labelledby="routingDestinationsLabel">
-                    <p class="routing-kicker" id="routingDestinationsLabel">Destinations</p>
+                    <p class="routing-kicker" id="routingDestinationsLabel">Body Responses</p>
 
-                    <article class="destination-card destination-brain">
+                    <article class="destination-card destination-brain" tabindex="0" role="button" aria-haspopup="dialog" data-core-explanation="brain">
                         <img class="destination-visual" src="assets/icons/biology/destination-brain.png" width="512" height="512" alt="" draggable="false">
                         <div>
-                            <strong>Brain Fuel</strong>
-                            <small>Continuous priority</small>
+                            <strong>Brain &amp; Essential Fuel</strong>
+                            <small>Continuous essential needs</small>
                         </div>
                         <b id="destinationFuelValue">63%</b>
                     </article>
 
-                    <article class="destination-card destination-liver">
+                    <article class="destination-card destination-liver" tabindex="0" role="button" aria-haspopup="dialog" data-core-explanation="liver">
                         <img class="destination-visual" src="assets/icons/biology/destination-liver.png" width="512" height="512" alt="" draggable="false">
                         <div>
                             <strong>Liver Processing</strong>
                             <small>Convert · store · release</small>
                         </div>
-                        <b id="destinationFatUseValue">51%</b>
+                        <b id="destinationLiverValue">—</b>
                     </article>
 
-                    <article class="destination-card destination-muscle">
+                    <article class="destination-card destination-muscle" tabindex="0" role="button" aria-haspopup="dialog" data-core-explanation="muscle">
                         <img class="destination-visual" src="assets/icons/biology/destination-muscle.png" width="512" height="512" alt="" draggable="false">
                         <div>
                             <strong>Working Muscles</strong>
-                            <small>Immediate performance</small>
+                            <small>Movement-related demand</small>
                         </div>
                         <b id="destinationMuscleValue">45%</b>
                     </article>
 
-                    <article class="destination-card destination-repair">
+                    <article class="destination-card destination-repair" tabindex="0" role="button" aria-haspopup="dialog" data-core-explanation="repair">
                         <img class="destination-visual" src="assets/icons/biology/destination-repair.png" width="512" height="512" alt="" draggable="false">
                         <div>
-                            <strong>Repair / Rebuilding</strong>
+                            <strong>Repair &amp; Rebuilding</strong>
                             <small>Tissue maintenance</small>
                         </div>
                         <b id="destinationRepairValue">55%</b>
                     </article>
 
-                    <article class="destination-card destination-glycogen">
+                    <article class="destination-card destination-glycogen" tabindex="0" role="button" aria-haspopup="dialog" data-core-explanation="glycogen">
                         <img class="destination-visual" src="assets/icons/biology/destination-glycogen.png" width="512" height="512" alt="" draggable="false">
                         <div>
                             <strong>Glycogen Storage</strong>
@@ -611,7 +546,7 @@
                         <b id="destinationGlycogenValue">48%</b>
                     </article>
 
-                    <article class="destination-card destination-storage">
+                    <article class="destination-card destination-storage" tabindex="0" role="button" aria-haspopup="dialog" data-core-explanation="fat-storage">
                         <img class="destination-visual" src="assets/icons/biology/destination-fat-storage.png" width="512" height="512" alt="" draggable="false">
                         <div>
                             <strong>Fat Storage</strong>
@@ -619,35 +554,135 @@
                         </div>
                         <b id="destinationStorageValue">29%</b>
                     </article>
+
+                    <article class="destination-card destination-fat-use" tabindex="0" role="button" aria-haspopup="dialog" data-core-explanation="fat-as-fuel">
+                        <img class="destination-visual" src="assets/icons/biology/input-fats.png" width="512" height="512" alt="" draggable="false">
+                        <div>
+                            <strong>Fat as Fuel</strong>
+                            <small>Dietary + reserve contribution</small>
+                        </div>
+                        <b id="destinationFatUseValue">51%</b>
+                    </article>
                 </div>
             </div>
 
 
-            <div class="stage-message" data-balance-state="matched" role="status" aria-live="polite" aria-atomic="true">
+            <div class="stage-message core-response" data-balance-state="empty" role="status" aria-live="polite" aria-atomic="true">
                 <span class="stage-balance-summary" id="balanceSummary">Supply near demand</span>
-                <strong id="stateTitle">Fuel matches demand</strong>
+                <strong id="stateTitle">No dietary inputs selected</strong>
                 <p id="stateDescription">
-                    Incoming energy supports activity, repair, organ function and
-                    normal storage while the system continuously adjusts.
+                    Add a food below to bring the fuel pathways to life.
                 </p>
             </div>
-
-            <button type="button" class="motion-toggle" id="motionToggle" aria-label="Pause animated fuel flow">
-                <span class="motion-icon" aria-hidden="true">∿</span>
-                Flow Motion
-                <strong id="motionToggleText">Pause</strong>
-            </button>
 
         </section>
 
 
-        <!-- RIGHT OUTPUTS -->
-        <aside class="panel output-panel" aria-labelledby="bodyOutputsHeading">
+        <!-- TODAY, NARRATION, AND SECONDARY MODEL CONTROLS -->
+        <aside class="panel output-panel day-panel legacy-backstage" id="todayFoodsPanel" aria-label="Preserved advanced model controls" hidden inert aria-hidden="true">
 
-            <div class="section-heading">
+            <section class="narration-card" aria-labelledby="narrationHeading">
+                <span class="narration-kicker">PLAIN-ENGLISH INTERPRETATION</span>
+                <h2 id="narrationHeading">What the model notices</h2>
+                <strong id="narrationTitle">The day’s combined pattern</strong>
+                <p id="narrationBody">This example combines familiar meals into one day of approximate inputs.</p>
+                <p class="narration-context" id="narrationContext">The routing map responds to the combined food estimates, Everyday Movement, and Today.</p>
+                <div class="experiment-card" id="experimentCard">
+                    <span>Try in the model</span>
+                    <button type="button" id="experimentButton">Keep the foods and change movement to Active / Training</button>
+                </div>
+                <div class="sr-only" id="narrationAnnouncement" role="status" aria-live="polite" aria-atomic="true"></div>
+            </section>
+
+            <section class="see-day-summary" aria-labelledby="seeSummaryHeading">
+                <div>
+                    <span class="view-kicker">CURRENT EXPERIMENT</span>
+                    <h2 id="seeSummaryHeading">Your day at a glance</h2>
+                </div>
+                <div class="see-summary-grid">
+                    <span><small>Foods</small><strong id="seeFoodsSummary">Familiar example · 12 foods</strong></span>
+                    <span><small>Movement</small><strong id="seeActivitySummary">Everyday Movement</strong></span>
+                    <span><small>Horizon</small><strong id="seeHorizonSummary">Today</strong></span>
+                </div>
+                <button type="button" class="change-day-button" data-view-target="build">Change My Day</button>
+            </section>
+
+            <p class="phase-guardrail">An educational model using approximate food examples—not a measurement of digestion, metabolism, or an individual outcome.</p>
+
+            <details class="explore-model" id="exploreModel">
+                <summary>
+                    <span><strong>Explore the Model</strong><small>Technical totals, direct controls, and routing signals</small></span>
+                    <span aria-hidden="true">＋</span>
+                </summary>
+
+                <div class="technical-source" id="technicalSource" data-source="foods">
+                    <div>
+                        <strong id="technicalSourceTitle">Using food estimates</strong>
+                        <span id="technicalSourceDetail">The values below come from Today’s foods.</span>
+                    </div>
+                    <button type="button" id="useFoodEstimatesButton" hidden>Use food estimates again</button>
+                </div>
+
+                <div class="technical-totals" aria-label="Approximate model inputs">
+                    <span><small>Fuel</small><strong><span id="technicalCalories">2,413</span> kcal</strong></span>
+                    <span><small>Protein</small><strong><span id="technicalProtein">150</span> g</strong></span>
+                    <span><small>Carbohydrates</small><strong><span id="technicalCarbs">199</span> g</strong></span>
+                    <span><small>Fats</small><strong><span id="technicalFats">113</span> g</strong></span>
+                </div>
+                <p class="technical-note">Approximate representative values are visible here for model exploration only.</p>
+
+                <div class="technical-presets presets" role="group" aria-label="Technical fuel and demand examples">
+                    <span class="preset-label">Technical examples</span>
+                    <button type="button" data-preset="everyday" class="preset" aria-pressed="false">Everyday Baseline</button>
+                    <button type="button" data-preset="matched" class="preset" aria-pressed="false">Well-Matched Active</button>
+                    <button type="button" data-preset="under" class="preset" aria-pressed="false">Demand Above Supply</button>
+                    <button type="button" data-preset="carb" class="preset" aria-pressed="false">Higher Carbohydrate</button>
+                    <button type="button" data-preset="fat" class="preset" aria-pressed="false">Higher Fat</button>
+                    <button type="button" data-preset="protein" class="preset" aria-pressed="false">Higher Protein</button>
+                    <button type="button" data-preset="oversupplied" class="preset" aria-pressed="false">Supply Above Demand</button>
+                </div>
+
+                <!-- Preserved for a future, separately framed weight-management experience. -->
+                <div class="goal-planner" id="weightManagementControls" hidden>
+                    <div class="planner-heading"><strong>Body Goal Context</strong><span>Optional context</span></div>
+                    <div class="weight-fields">
+                        <label class="weight-field" for="currentWeight"><span>Current weight</span><input id="currentWeight" type="number" min="1" max="1200" step="0.1" inputmode="decimal" placeholder="—"></label>
+                        <label class="weight-field" for="targetWeight"><span>Target weight</span><input id="targetWeight" type="number" min="1" max="1200" step="0.1" inputmode="decimal" placeholder="—"></label>
+                        <label class="weight-unit" for="weightUnit"><span>Unit</span><select id="weightUnit"><option value="lb">lb</option><option value="kg">kg</option></select></label>
+                    </div>
+                    <div class="trajectory-card" id="trajectoryCard" data-state="setup" aria-live="polite" aria-atomic="true">
+                        <span class="trajectory-icon" id="trajectoryIcon" aria-hidden="true">○</span>
+                        <span><small>Trajectory</small><strong id="trajectoryLabel">Add weights to see direction</strong><em id="trajectoryDetail">Enter both weights to compare this scenario with a target direction.</em></span>
+                    </div>
+                </div>
+
+                <section class="technical-controls" aria-labelledby="technicalControlsHeading">
+                    <div class="section-heading"><h2 id="technicalControlsHeading">Direct fuel controls</h2><span>Changing these enters Adjusted from foods mode</span></div>
+                    <div class="control calorie-control">
+                        <div class="control-row"><span class="label-with-info"><label for="calorieTarget">Approximate Fuel In</label><button type="button" class="info-button" aria-label="About approximate fuel in" data-learn-target="approximate-fuel-in" data-tooltip-title="Approximate fuel in" data-tooltip="This budget uses the 4 / 4 / 9 relationship. It is an educational estimate, not a personal prescription.">i</button></span><strong><span id="calories">2,413</span> kcal</strong></div>
+                        <input id="calorieTarget" type="range" min="0" max="6000" step="1" value="2413" aria-valuetext="2,413 kilocalories">
+                        <div class="starting-balance"><span><small>Proposed starting balance</small><strong>25% P · 45% C · 30% F</strong></span><button type="button" id="resetMixButton" aria-label="Reset unlocked macros to the proposed starting balance">Reset Mix</button></div>
+                        <p class="calorie-status" id="calorieStatus" role="status" aria-atomic="true">Values are currently derived from the Familiar Meals Example.</p>
+                    </div>
+
+                    <div class="control protein">
+                        <div class="control-row"><span class="label-with-info"><label for="protein">Protein</label><button type="button" class="info-button" aria-label="About protein input" data-learn-target="protein" data-tooltip-title="Protein input" data-tooltip="Supports the model’s tissue-maintenance and rebuilding signal. Foods commonly contain more than one macronutrient.">i</button></span><span class="macro-value"><strong><span id="proteinValue">150</span> g</strong><button type="button" class="macro-lock" data-macro="protein" aria-pressed="false" aria-label="Protein lock at 150 grams"><span class="lock-symbol" aria-hidden="true"></span><span class="lock-label">Lock</span></button></span></div>
+                        <input id="protein" type="range" min="0" max="500" value="150" aria-valuetext="150 grams">
+                    </div>
+                    <div class="control carbs">
+                        <div class="control-row"><span class="label-with-info"><label for="carbs">Carbohydrates</label><button type="button" class="info-button" aria-label="About carbohydrate input" data-learn-target="carbohydrates" data-tooltip-title="Carbohydrate input" data-tooltip="Commonly supports readily available energy and glycogen stores in this model. Foods commonly contain more than one macronutrient.">i</button></span><span class="macro-value"><strong><span id="carbsValue">199</span> g</strong><button type="button" class="macro-lock" data-macro="carbs" aria-pressed="false" aria-label="Carbohydrates lock at 199 grams"><span class="lock-symbol" aria-hidden="true"></span><span class="lock-label">Lock</span></button></span></div>
+                        <input id="carbs" type="range" min="0" max="1000" value="199" aria-valuetext="199 grams">
+                    </div>
+                    <div class="control fats">
+                        <div class="control-row"><span class="label-with-info"><label for="fats">Fats</label><button type="button" class="info-button" aria-label="About fat input" data-learn-target="fats" data-tooltip-title="Fat input" data-tooltip="Contributes concentrated energy to the modeled fuel mix. Dietary fat is not the same as body-fat storage.">i</button></span><span class="macro-value"><strong><span id="fatsValue">113</span> g</strong><button type="button" class="macro-lock" data-macro="fats" aria-pressed="false" aria-label="Fats lock at 113 grams"><span class="lock-symbol" aria-hidden="true"></span><span class="lock-label">Lock</span></button></span></div>
+                        <input id="fats" type="range" min="0" max="400" value="113" aria-valuetext="113 grams">
+                    </div>
+                </section>
+
+            <div class="section-heading model-output-heading">
                 <h2 class="heading-with-info" id="bodyOutputsHeading">
-                    Body Outputs
-                    <button type="button" class="info-button" aria-label="About body outputs" data-learn-target="destinations" data-tooltip-title="Body Outputs" data-tooltip="These gauges summarize how the model responds to the current fuel mix, activity demand and pattern duration. Green, yellow and red status pills call attention according to each signal's meaning; they are not grades. All values are relative comparisons within this explorer—not measurements, medical assessments or predictions.">i</button>
+                    Model signals
+                    <button type="button" class="info-button" aria-label="About model signals" data-learn-target="destinations" data-tooltip-title="Model signals" data-tooltip="These gauges summarize relative routing tendencies within this explorer. They are not grades, measurements, medical assessments, or predictions.">i</button>
                 </h2>
                 <span>Conceptual routing tendencies</span>
             </div>
@@ -656,7 +691,7 @@
                 <div class="output-copy">
                     <span class="output-name" id="fuelOutputName"><span class="output-symbol output-symbol-fuel" aria-hidden="true">◈</span>Fuel Pool <button type="button" class="info-button" aria-label="About fuel pool output" data-learn-target="fuel-pool" data-tooltip-title="Fuel Pool" data-tooltip="A simplified indicator of readily available circulating energy after current activity demand. It is comparative within this explorer, not a measured blood value.">i</button></span>
                     <output class="output-value" id="fuelOutput" for="protein carbs fats activity time" aria-live="off">63%</output>
-                    <em id="fuelStatus">Good</em>
+                    <em id="fuelStatus">High</em>
                     <small>Readily available energy</small>
                 </div>
                 <div class="gauge" aria-hidden="true">
@@ -722,7 +757,7 @@
 
             <article class="output-card" style="--gauge-color: #ff8b66" aria-labelledby="fatUseOutputName">
                 <div class="output-copy">
-                    <span class="output-name" id="fatUseOutputName"><img class="output-symbol" src="assets/icons/biology/input-fats.png" width="512" height="512" alt="">Fat Use <button type="button" class="info-button" aria-label="About fat use output" data-learn-target="fats" data-tooltip-title="Fat Use" data-tooltip="The relative contribution of fat to the modeled fuel mix. Its status color indicates intensity, not whether fat use is good or bad. It describes routing tendency—not measured fat oxidation or predicted fat loss.">i</button></span>
+                    <span class="output-name" id="fatUseOutputName"><img class="output-symbol" src="assets/icons/biology/input-fats.png" width="512" height="512" alt="">Fat as Fuel <button type="button" class="info-button" aria-label="About fat as fuel output" data-learn-target="fats" data-tooltip-title="Fat as Fuel" data-tooltip="Fat contributing to current energy needs, from dietary fat or released reserves. Its status color indicates relative model emphasis—not measured fat oxidation, direct conversion to body fat, or a predicted personal outcome.">i</button></span>
                     <output class="output-value" id="fatUseOutput" for="protein carbs fats activity time" aria-live="off">51%</output>
                     <em id="fatUseStatus">Moderate</em>
                     <small>Reserve fuel contribution</small>
@@ -760,16 +795,45 @@
                 Simplified relationships for exploring general tendencies—not medical advice, measurement, or individual prediction.
             </div>
 
+            </details>
+
         </aside>
 
     </main>
 
     <footer class="site-footer">
-        <span>Body Fuel Flow Explorer is a conceptual educational model—not medical advice or individual prediction.</span>
+        <span>An educational model using approximate food examples—not a measurement of digestion, metabolism, or an individual outcome.</span>
         <span>© 2026 Anthony Adams. All rights reserved.</span>
     </footer>
 
 </div>
+
+<aside class="guide-invitation" id="guideInvitation" role="region" aria-labelledby="guideInvitationTitle" hidden>
+    <p id="guideInvitationTitle">Want a 90-second guided example?</p>
+    <div class="guide-invitation-actions">
+        <button type="button" class="guide-invitation-primary" id="guideInvitationStart">Show me</button>
+        <button type="button" id="guideInvitationDismiss">Explore myself</button>
+    </div>
+</aside>
+
+<div class="guide-dimmer" id="guideDimmer" aria-hidden="true" hidden></div>
+
+<section class="guide-coach" id="guideCoach" role="dialog" aria-modal="false" aria-labelledby="guideTitle" aria-describedby="guideBody" hidden>
+    <div class="guide-coach-head">
+        <span class="guide-progress" id="guideProgress">1 of 7</span>
+        <button type="button" class="guide-exit" id="guideExit" aria-label="Exit guide and restore prior explorer state">Exit</button>
+    </div>
+    <h2 id="guideTitle">How the comparison works</h2>
+    <div class="guide-copy" id="guideBody"></div>
+    <p class="guide-action-status" id="guideActionStatus" role="status" aria-live="polite"></p>
+    <div class="guide-primary-actions" id="guidePrimaryActions"></div>
+    <div class="guide-navigation">
+        <button type="button" class="guide-back" id="guideBack">Back</button>
+        <button type="button" class="guide-next" id="guideNext">Next</button>
+    </div>
+</section>
+
+<div class="guide-announcer" id="guideAnnouncer" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <div class="info-popover" id="infoPopover" role="tooltip" aria-hidden="true">
     <strong id="infoPopoverTitle"></strong>
@@ -777,7 +841,20 @@
     <a class="info-popover-link" id="infoPopoverLink" href="learn.html?from=explorer" hidden>See it <span aria-hidden="true">→</span></a>
 </div>
 
-<dialog class="welcome-dialog" id="welcomeDialog" aria-labelledby="welcomeTitle" aria-describedby="welcomeIntro">
+<dialog class="core-explanation-dialog" id="coreExplanationDialog" aria-labelledby="coreExplanationTitle" aria-describedby="coreExplanationBody">
+    <div class="core-explanation-sheet">
+        <button type="button" class="core-explanation-close" id="coreExplanationClose" aria-label="Close explanation">×</button>
+        <span class="view-kicker">CONCEPTUAL MODEL</span>
+        <h2 id="coreExplanationTitle">About this part of the model</h2>
+        <p id="coreExplanationBody"></p>
+        <details class="core-explanation-details" id="coreExplanationDetails" hidden>
+            <summary id="coreExplanationDetailsTitle">More context</summary>
+            <ul id="coreExplanationDetailsList"></ul>
+        </details>
+    </div>
+</dialog>
+
+<dialog class="welcome-dialog legacy-backstage" id="welcomeDialog" aria-labelledby="welcomeTitle" aria-describedby="welcomeIntro" hidden inert aria-hidden="true">
     <div class="welcome-panel">
         <button type="button" class="welcome-close" id="welcomeCloseButton" aria-label="Close welcome introduction">×</button>
 
@@ -812,11 +889,11 @@
         <ol class="welcome-steps" aria-label="Three experiments to try">
             <li>
                 <span class="welcome-step-number">1</span>
-                <span><strong>Move a fuel slider</strong><small>Watch routes brighten, thin or change destination.</small></span>
+                <span><strong>Choose a familiar food</strong><small>Add an ordinary portion and watch the routes respond.</small></span>
             </li>
             <li>
                 <span class="welcome-step-number">2</span>
-                <span><strong>Change activity demand</strong><small>See working tissue pull harder from the shared system.</small></span>
+                <span><strong>Change how you moved</strong><small>See working tissue pull differently from the shared system.</small></span>
             </li>
             <li>
                 <span class="welcome-step-number">3</span>
@@ -828,8 +905,13 @@
     </div>
 </dialog>
 
-<script src="model.js?v=20260817-1"></script>
-<script src="app.js?v=20260817-2"></script>
+<script src="model.js?v=20260819-1"></script>
+<script src="foods.js?v=20260818-2"></script>
+<script src="narration.js?v=20260819-2"></script>
+<script src="explanations.js?v=20260819-2"></script>
+<script src="app.js?v=20260819-6"></script>
+<script src="guide-scenarios.js?v=20260819-1"></script>
+<script src="guide.js?v=20260819-4"></script>
 
 </body>
 </html>

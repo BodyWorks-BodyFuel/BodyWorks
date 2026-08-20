@@ -1,7 +1,8 @@
 # Testing Body Fuel Flow Explorer
 
-The webpage remains dependency-free at runtime. Its calculation model lives in
-`model.js`, which is shared by Safari and the automated tests.
+The webpage remains dependency-free at runtime. Its stable calculation model
+lives in `model.js`; food catalog, narration, concise explanations, and UI state
+remain separate layers.
 
 ## Automated checks
 
@@ -11,94 +12,104 @@ With Node.js available, run:
 npm test
 ```
 
-The suite covers calorie arithmetic, slider limits, macro redistribution,
-every lock combination, repeated macro movement, weight-context isolation, trajectory,
-the four activity profiles, the four viewing horizons, presets, output bounds,
-routing values, local page resources, companion-guide anchors and interactions,
-and preset/manual scenario state safety.
+The suite covers the stable model, food catalog and aggregation, empty-state
+guard, first-food awakening, relative route emphasis, all Pattern Timeline
+lenses, partial-day wording, food tabs and tile portion editing, in-place
+explanations, hidden advanced controls, responsive structure, reduced motion,
+local resources, and root/subpath hosting.
 
-On a clean load, the selected model example should be **Everyday Baseline**:
-2,150 kcal from 134 g protein, 246 g carbohydrate and 70 g fat, paired with
-Everyday Movement and Today. These are model reference values, not a personal
-recommendation. Reset should restore this complete state and clear both weights.
+The optional guided example adds model-backed contracts for scenario energy
+distance, response distribution, multi-signal contrast, reserve-release
+emphasis, stable tie-breaking, snapshot safety, action gates, and educational
+wording. Manual browser checks must use the requested real food `+` and real
+`Weeks` controls; programmatically advancing those gates is not equivalent.
 
-## Safari debugging
+## Core interaction check
 
-1. Open `index.html` in Safari.
-2. Open Web Inspector with Option-Command-I.
-3. Keep Inspector in a separate window so it does not compress the dashboard.
-4. Select Console and refresh the page with Command-R.
+1. Open `index.html` in Safari with Web Inspector’s Console visible and refresh.
+2. Confirm the page starts empty: the full anatomical figure glows softly,
+   nutrient routes do not flow, destination cards are extremely subdued, and
+   the prompt asks for a food. No model result should be presented.
+3. Add a food. The current category must remain selected, the selected-food
+   count and estimated energy update, routes and destination cards appear, and
+   one short sentence explains the combined-pattern change.
+4. Add that food again and confirm its tile reads `2`. Test its minus and plus
+   controls, then use **Clear foods** and **Undo clear**. Counts, selected
+   styling, hero state, and the current Pattern Timeline must stay synchronized.
+5. Try Today, Days, Weeks, and Months. With a partial day, every option beyond
+   Today must state that the selections are treated as the complete repeated
+   daily pattern. Confirm Today shows `kcal`; the other lenses show the same
+   selected-day estimate as `kcal/day`, never a multiplied cumulative total.
+6. Open a food, input, destination, timeline, and estimated-energy explanation. Confirm each is
+   concise and dismissible, Escape closes it, and focus returns to its trigger.
+7. Confirm the Console remains free of warnings and errors.
 
-The Console should remain free of errors. For a quick interaction check, move
-the Fat slider up and back: Protein and Carbohydrates should redistribute while
-the master calorie target remains stable within four calories of integer-gram
-rounding. Then move Pattern Duration through Today, Days, Weeks, and Months;
-the selected label, explanatory sentence, repair/storage signals, and central
-fuel-pool state should update without Console errors.
+## Physical iPad check
 
-Finally, hold Approximate Fuel In near 2,700 kcal and move Activity Pattern
-from Rest through High. The visible model reference should step from about
-1,800 to 3,000 kcal/day, and the stage should move from supply above demand to
-demand above supply at the High profile.
+Test Safari in portrait and landscape at 100%, 125%, and 150% browser zoom or
+text enlargement:
 
-For the weight-context check, select each preset—including Everyday Baseline—and
-enter current and target weights in higher, lower and equal directions. Only the
-trajectory comparison should change: the preset selection, fuel, macros,
-activity and Pattern Duration must remain untouched. Clear either weight and
-confirm the trajectory returns to setup without changing the scenario. Repeat
-after manually changing each slider.
+- The hero and food workspace remain the primary pair; Pattern Timeline follows
+  the complete food workspace as the repeated-pattern exploration.
+- The document itself does not scroll; only the current category’s food tiles
+  scroll internally.
+- The anatomical figure stays centered, and no route, card, tab, or food tile
+  is clipped horizontally.
+- The response sentence sits below the artwork in normal flow. Confirm the
+  figure from head through feet, all three input cards, and all seven
+  destination cards remain inside the hero artwork without touching the
+  response strip, motion control, or Pattern Timeline.
+- Tap targets remain comfortable, filter tabs wrap cleanly, and adjusting
+  several tile steppers never changes the active category unexpectedly.
+- The visible `−  quantity  +` chrome stays compact inside each tile while the
+  minus and plus hit areas remain about 44×44 CSS pixels. Long names may wrap
+  to two lines, and every tile in the same row should share one compact height.
+  The tile surface should read as flat information chrome rather than a large
+  button, with a restrained selected tint and the nonzero count always visible.
+- Every tile starts at `0`; only its explicit minus and plus buttons change the
+  count. The info control and tile body must not modify quantity.
+- Slowly scroll and quickly flick each category. Proximity snapping should
+  settle on a complete visual row without feeling locked. Tiles sharing a row
+  must share one snap position; the final row must remain fully reachable.
+- Switch categories after scrolling and confirm the new category begins on its
+  first complete row. Adjusting quantities must retain both category and scroll
+  position. Keyboard focus entering an offscreen tile should reveal its entire
+  row immediately.
+- **Clear foods** stays visually distinct from category tabs, keeps focus after
+  clearing, announces the empty result, and offers Undo without changing the
+  Pattern Timeline.
+- The first food creates visible flow; later portions change relative emphasis;
+  and the one-sentence response remains readable without covering the figure.
+- Estimated energy remains legible and neutral, updates for half portions made
+  through preserved backstage logic, and restores exactly after Clear/Undo.
+- VoiceOver announces tabs, portions, stepper actions, timeline choices, and
+  explanations meaningfully. Rapid quantity changes should produce one settled
+  live announcement rather than a stream.
+- A dialog closes by its close button, tapping the backdrop, and Escape on a
+  hardware keyboard; focus returns to the original control.
+- With **Settings → Accessibility → Motion → Reduce Motion** enabled, route and
+  card emphasis remains understandable through brightness, outline, and text
+  without animated flow.
+- Safari’s top and bottom bars and device safe areas do not cover controls or
+  the scientific guardrail. In portrait, the disclaimer and copyright form a
+  tight 11–12px row or stack with no extra blank band below the safe-area inset.
+- The hero, Pattern Timeline, food workspace, and energy inset read as four
+  related but distinct dark surfaces. Resting help controls remain secondary;
+  keyboard focus rings remain unmistakable. Footer copy should read at roughly
+  12px with comfortable line spacing and remain visually subordinate.
 
-When fuel is near modeled demand, the trajectory should say **Scenario near
-modeled balance**, even when the entered target is lower or higher. Directional
-scenarios should say **Scenario points toward target** or **Scenario points away
-from target** without claiming a personal outcome.
+Also check 1440×900 desktop and 390×844 narrow-mobile layouts. Desktop/iPad
+landscape should use a food-and-hero split; portrait/mobile should keep hero,
+food, and then timeline in reading order with no horizontal overflow.
+At 1024×768, the workspace should extend from beneath the header to the footer
+without the large unused lower band seen in the original iPad capture; the food
+catalog scrolls inside its available left-column height. Narrower effective
+widths may reduce the catalog to two or one column so labels stay readable
+instead of shrinking text or clipping the inline stepper.
 
-## Responsive layout check
+## Preserved backstage behavior
 
-Resize Safari across the layout thresholds at approximately 1,250, 900, 650,
-and 460 pixels wide.
-
-- Above 1,250 pixels, the complete dashboard should remain fitted to the
-  window while the two information rails scroll independently when needed.
-- Between 901 and 1,250 pixels, controls and the routing stage should share the
-  first row, with Body Outputs arranged below them.
-- Between 651 and 900 pixels, controls, routing, and outputs should form a
-  readable single-column page without horizontal scrolling.
-- At 650 pixels and below, the SVG network intentionally gives way to a compact
-  learning view: Inputs, the anatomy, and Destinations occupy separate rows.
-- In a very short desktop window, the compact-height rules should keep the
-  stage message and flow control visible without covering the route cards.
-
-## Keyboard and accessibility check
-
-Press Tab from the address bar. A **Skip to explorer** link should appear and
-move focus directly to the dashboard. Continue tabbing through presets,
-planner fields, locks, sliders, information buttons, and Flow Motion; every
-focused control should have a bright blue outline.
-
-- Use the arrow keys on each slider and confirm its visible value updates.
-- Focus an information button to open its explanation; press Escape to close
-  it.
-- Select a preset and confirm only that preset remains visually selected.
-- Pause Flow Motion and confirm the button changes to Play.
-- With macOS Reduce Motion enabled, refresh and confirm particles begin
-  paused while all calculations and controls continue to work.
-
-## Visual learning guide check
-
-Open `learn.html` directly or choose **How This Works →** in the explorer.
-
-- Switch the fuel-pool example among Everyday, Training, and More Supply. The
-  pool fill, muscle pull, route strength, value, and one-sentence explanation
-  should change together.
-- Switch the storage cycle between Store Fuel and Release Fuel. The direction
-  of motion and reserve label should reverse.
-- Return to the explorer, select an info button, and choose **See it →**. The
-  guide should open at the matching highlighted concept. Change several
-  explorer controls before leaving, then use the always-visible **Back to Your
-  Explorer** link. Weights, calorie target, macros, locks, activity, Pattern
-  Duration, selected preset, and Flow Motion should match the scenario you
-  left.
-- At narrow widths, all guide sections should stack without horizontal
-  scrolling. With Reduce Motion enabled, diagrams remain readable without
-  moving particles.
+The older example-day, movement, weight, technical controls, presets, gauges,
+narration, suggested experiments, and learning-guide hooks remain in the code.
+They must stay hidden, inert, and absent from the visual and accessibility flow
+of the simplified core while their existing regression tests continue to pass.

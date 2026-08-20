@@ -71,6 +71,7 @@ test("learning-guide IDs are unique and cover the high-value concepts", () => {
 
     [
         "machine",
+        "food-examples",
         "protein",
         "carbohydrates",
         "fats",
@@ -114,10 +115,10 @@ test("every explorer tooltip deep link resolves to the visual guide", () => {
         );
     });
 
-    assert.match(explorerHtml, /class="learn-link" href="learn\.html\?from=explorer"/);
+    assert.match(explorerHtml, /class="learn-link legacy-backstage" href="learn\.html\?from=explorer" hidden tabindex="-1"/);
     assert.match(explorerHtml, /id="infoPopoverLink"/);
     assert.match(explorerApp, /`learn\.html\?from=explorer#\$\{learnTarget\}`/);
-    assert.match(explorerHtml, /data-learn-target="goal-direction"/);
+    assert.match(explorerHtml, /data-core-explanation="food-portions"/);
 });
 
 
@@ -141,6 +142,14 @@ test("the learning guide keeps section navigation and a route back to the top vi
     assert.match(learnCss, /\.learn-nav \{[\s\S]*?position: sticky;[\s\S]*?top: 76px;/);
     assert.match(learnCss, /\.learn-nav-links \{[\s\S]*?display: flex;/);
     assert.match(learnCss, /\[id\] \{[\s\S]*?scroll-margin-top: 142px;/);
+});
+
+
+test("the guide uses Body Responses and the Fat as Fuel terminology", () => {
+    assert.match(learnHtml, />Body Responses<\/a>/);
+    assert.match(learnHtml, /<span class="eyebrow">BODY RESPONSES<\/span>/);
+    assert.match(learnHtml, /response labeled Fat as Fuel/);
+    assert.doesNotMatch(learnHtml, />Destinations<\/a>|<span class="eyebrow">DESTINATIONS<\/span>/);
 });
 
 

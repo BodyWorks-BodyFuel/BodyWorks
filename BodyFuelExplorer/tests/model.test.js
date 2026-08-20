@@ -4,6 +4,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 
 const model = require("../model.js");
+const foods = require("../foods.js");
 
 const baseMacros = {
     protein: 150,
@@ -657,4 +658,57 @@ test("flow styling strongly differentiates low and dominant routes", () => {
         dominant.particles.filter(particle => particle.opacity > 0.05).length;
 
     assert.ok(dominantParticles > lowParticles);
+});
+
+
+test("canonical liver processing signal is bounded and grows with incoming mixed-food load", () => {
+    const routeFor = input =>
+        model.calculateRouteSignals(model.calculateBodyState(input));
+
+    const empty = routeFor({
+        protein: 0, carbs: 0, fats: 0, activity: 1, time: 0
+    });
+    const oatmeal = routeFor({
+        ...foods.aggregateFoods([{ foodId: "oatmeal", quantity: 1 }]),
+        activity: 1,
+        time: 0
+    });
+    const nearReference = routeFor(model.presets.everyday);
+    const mixed3180 = routeFor({
+        protein: 180,
+        carbs: 300,
+        fats: 140,
+        activity: 1,
+        time: 0
+    });
+    const mixed3180Months = routeFor({
+        protein: 180,
+        carbs: 300,
+        fats: 140,
+        activity: 1,
+        time: 3
+    });
+
+    assert.equal(empty.strengths.liver, 0);
+    assert.equal(empty.destinations.liver, 0);
+    assert.ok(oatmeal.strengths.liver >= 30 && oatmeal.strengths.liver < 55);
+    assert.ok(nearReference.strengths.liver > oatmeal.strengths.liver);
+    assert.ok(mixed3180.strengths.liver > nearReference.strengths.liver);
+    assert.equal(mixed3180Months.strengths.liver, mixed3180.strengths.liver);
+
+    [empty, oatmeal, nearReference, mixed3180, mixed3180Months]
+        .forEach(routes => {
+            assert.equal(routes.destinations.liver, routes.strengths.liver);
+            assert.ok(routes.strengths.liver >= 0 && routes.strengths.liver <= 100);
+        });
+
+    [
+        { protein: 0, carbs: 0, fats: 0, activity: 0, time: 0 },
+        { protein: 250, carbs: 500, fats: 180, activity: 0, time: 3 },
+        { protein: 250, carbs: 500, fats: 180, activity: 3, time: 3 }
+    ].forEach(input => {
+        const liver = routeFor(input).strengths.liver;
+        assert.ok(Number.isFinite(liver));
+        assert.ok(liver >= 0 && liver <= 100);
+    });
 });
