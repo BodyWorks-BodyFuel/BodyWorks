@@ -7336,7 +7336,53 @@ body.core-mode .food-tile-wrap {
 }
 
 .explorer-intro-panel {
+    position: relative;
     padding: clamp(24px, 4vw, 54px);
+}
+
+.preview-watermark {
+    z-index: 24;
+    display: inline-flex;
+    align-items: center;
+    min-height: 25px;
+    padding: 4px 10px;
+    border: 1px solid rgba(255, 192, 93, .42);
+    border-radius: 999px;
+    color: rgba(255, 214, 145, .82);
+    font-size: 10px;
+    font-weight: 850;
+    line-height: 1;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    background: rgba(65, 39, 13, .34);
+    box-shadow: 0 0 18px rgba(240, 162, 54, .08);
+    pointer-events: none;
+    user-select: none;
+}
+
+.preview-watermark-hero {
+    position: absolute;
+    top: 13px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.preview-watermark-intro {
+    position: absolute;
+    top: 18px;
+    right: 22px;
+}
+
+@media (max-width: 700px) {
+    .preview-watermark-hero {
+        top: 9px;
+        font-size: 8px;
+    }
+
+    .preview-watermark-intro {
+        position: static;
+        margin-bottom: 12px;
+    }
 }
 
 .explorer-intro-kicker {
