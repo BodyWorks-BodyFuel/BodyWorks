@@ -1,0 +1,512 @@
+<!--
+    Body Fuel Flow Explorer — Visual Learning Guide
+    Copyright © 2026 Anthony Adams. All rights reserved.
+    Public visibility does not grant permission to reuse this work. See COPYRIGHT.md.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Anthony Adams">
+    <meta name="copyright" content="Copyright © 2026 Anthony Adams. All rights reserved.">
+    <title>See the Machine — Body Fuel Flow Explorer</title>
+    <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="learn.css">
+</head>
+
+<body>
+
+<a class="skip-link" href="#learnMain">Skip to the visual guide</a>
+
+<div class="learn-shell" id="learnTop">
+
+    <header class="learn-topbar">
+        <a class="learn-brand explorer-return-link" href="index.html" aria-label="Return to your Body Fuel Flow Explorer">
+            <span class="learn-brand-icon" aria-hidden="true">◈</span>
+            <span>
+                <strong>Body Fuel Flow Explorer</strong>
+                <small>Visual learning guide</small>
+            </span>
+        </a>
+
+        <a class="return-link explorer-return-link" href="index.html">← Back to Your Explorer</a>
+    </header>
+
+    <nav class="learn-nav" aria-label="Learning guide sections">
+        <a class="learn-nav-top" href="#learnTop">↑ Top</a>
+        <div class="learn-nav-links">
+            <a href="#machine">The Machine</a>
+            <a href="#food-examples">Food Examples</a>
+            <a href="#fuel-inputs">Fuel Inputs</a>
+            <a href="#destinations">Body Responses</a>
+            <a href="#stored-fuel-release">Storage Cycle</a>
+            <a href="#controls">Controls</a>
+            <a href="#goal-direction">Goal Direction</a>
+        </div>
+    </nav>
+
+    <main id="learnMain">
+
+        <section class="machine-intro" id="machine" aria-labelledby="machineTitle">
+            <div class="intro-copy">
+                <span class="eyebrow">ONE HUMAN MACHINE</span>
+                <h1 id="machineTitle">Different inputs. Different demand. Changing priorities.</h1>
+                <p>Fuel enters one shared system, then the body continually routes, stores and releases it according to current needs.</p>
+            </div>
+
+            <div class="machine-board" aria-label="Protein, carbohydrates and fats entering a shared body fuel pool and routing toward six destinations">
+                <svg class="machine-routes" viewBox="0 0 1160 600" preserveAspectRatio="none" aria-hidden="true">
+                    <defs>
+                        <filter id="learnGlow" x="-70%" y="-70%" width="240%" height="240%">
+                            <feGaussianBlur stdDeviation="4" result="blur"></feGaussianBlur>
+                            <feMerge>
+                                <feMergeNode in="blur"></feMergeNode>
+                                <feMergeNode in="SourceGraphic"></feMergeNode>
+                            </feMerge>
+                        </filter>
+
+                        <path id="learnProteinIn" d="M 210 155 C 360 155, 430 265, 575 312"></path>
+                        <path id="learnCarbsIn" d="M 210 310 C 360 310, 435 310, 575 312"></path>
+                        <path id="learnFatsIn" d="M 210 465 C 360 465, 435 360, 575 312"></path>
+                        <path id="learnBrainOut" d="M 575 65 C 690 50, 790 110, 920 112"></path>
+                        <path id="learnLiverOut" d="M 557 217 C 680 196, 800 190, 920 191"></path>
+                        <path id="learnMuscleOut" d="M 610 380 C 710 310, 800 270, 920 270"></path>
+                        <path id="learnRepairOut" d="M 610 190 C 720 220, 820 340, 920 349"></path>
+                        <path id="learnGlycogenOut" d="M 593 365 C 700 400, 800 428, 920 428"></path>
+                        <path id="learnStorageOut" d="M 585 320 C 700 420, 800 507, 920 507"></path>
+                    </defs>
+
+                    <g class="learn-line protein-line">
+                        <use href="#learnProteinIn"></use>
+                        <circle r="5"><animateMotion dur="3.8s" repeatCount="indefinite"><mpath href="#learnProteinIn"></mpath></animateMotion></circle>
+                    </g>
+                    <g class="learn-line carb-line">
+                        <use href="#learnCarbsIn"></use>
+                        <circle r="6"><animateMotion dur="3s" repeatCount="indefinite"><mpath href="#learnCarbsIn"></mpath></animateMotion></circle>
+                        <circle r="4"><animateMotion dur="3s" begin="-1.5s" repeatCount="indefinite"><mpath href="#learnCarbsIn"></mpath></animateMotion></circle>
+                    </g>
+                    <g class="learn-line fat-line">
+                        <use href="#learnFatsIn"></use>
+                        <circle r="5"><animateMotion dur="4.2s" repeatCount="indefinite"><mpath href="#learnFatsIn"></mpath></animateMotion></circle>
+                    </g>
+
+                    <g class="learn-line brain-line"><use href="#learnBrainOut"></use><circle r="5"><animateMotion dur="2.8s" repeatCount="indefinite"><mpath href="#learnBrainOut"></mpath></animateMotion></circle></g>
+                    <g class="learn-line liver-line"><use href="#learnLiverOut"></use><circle r="5"><animateMotion dur="3.4s" repeatCount="indefinite"><mpath href="#learnLiverOut"></mpath></animateMotion></circle></g>
+                    <g class="learn-line muscle-line"><use href="#learnMuscleOut"></use><circle r="6"><animateMotion dur="2.5s" repeatCount="indefinite"><mpath href="#learnMuscleOut"></mpath></animateMotion></circle></g>
+                    <g class="learn-line repair-line"><use href="#learnRepairOut"></use><circle r="5"><animateMotion dur="3.5s" repeatCount="indefinite"><mpath href="#learnRepairOut"></mpath></animateMotion></circle></g>
+                    <g class="learn-line glycogen-line"><use href="#learnGlycogenOut"></use><circle r="5"><animateMotion dur="3.8s" repeatCount="indefinite"><mpath href="#learnGlycogenOut"></mpath></animateMotion></circle></g>
+                    <g class="learn-line storage-line"><use href="#learnStorageOut"></use><circle r="5"><animateMotion dur="4.4s" repeatCount="indefinite"><mpath href="#learnStorageOut"></mpath></animateMotion></circle></g>
+                </svg>
+
+                <div class="machine-inputs" role="group" aria-label="Fuel inputs">
+                    <div class="machine-node protein-node">
+                        <img src="assets/icons/biology/input-protein.png" width="512" height="512" alt="">
+                        <span><strong>Protein</strong><small>Repair material</small></span>
+                    </div>
+                    <div class="machine-node carb-node">
+                        <img src="assets/icons/biology/input-carbohydrates.png" width="512" height="512" alt="">
+                        <span><strong>Carbohydrates</strong><small>Glucose + glycogen</small></span>
+                    </div>
+                    <div class="machine-node fat-node">
+                        <img src="assets/icons/biology/input-fats.png" width="512" height="512" alt="">
+                        <span><strong>Fats</strong><small>Energy + reserve</small></span>
+                    </div>
+                </div>
+
+                <div class="machine-body">
+                    <div class="machine-orbit" aria-hidden="true"></div>
+                    <img src="assets/body/body-anatomical-v4-alpha.png" width="887" height="1774" alt="An anatomical human figure representing the shared body system">
+                    <div class="shared-pool">
+                        <span>SHARED</span>
+                        <strong>Fuel Pool</strong>
+                    </div>
+                </div>
+
+                <div class="machine-destinations" role="group" aria-label="Fuel destinations">
+                    <div class="machine-destination" data-route-anchor="brain"><img src="assets/icons/biology/destination-brain.png" width="512" height="512" alt=""><span>Brain</span></div>
+                    <div class="machine-destination" data-route-anchor="liver"><img src="assets/icons/biology/destination-liver.png" width="512" height="512" alt=""><span>Liver</span></div>
+                    <div class="machine-destination" data-route-anchor="muscle"><img src="assets/icons/biology/destination-muscle.png" width="512" height="512" alt=""><span>Muscles</span></div>
+                    <div class="machine-destination" data-route-anchor="repair"><img src="assets/icons/biology/destination-repair.png" width="512" height="512" alt=""><span>Repair</span></div>
+                    <div class="machine-destination" data-route-anchor="glycogen"><img src="assets/icons/biology/destination-glycogen.png" width="512" height="512" alt=""><span>Glycogen</span></div>
+                    <div class="machine-destination" data-route-anchor="storage"><img src="assets/icons/biology/destination-fat-storage.png" width="512" height="512" alt=""><span>Fat reserve</span></div>
+                </div>
+            </div>
+
+            <p class="visual-caveat">The routes show relative relationships—not literal pipes or exact calories traveling to one tissue.</p>
+        </section>
+
+
+        <section class="learn-section" id="food-examples" aria-labelledby="foodExamplesTitle">
+            <div class="section-intro">
+                <span class="eyebrow">FOODS ON THE SURFACE · ESTIMATES UNDERNEATH</span>
+                <h2 id="foodExamplesTitle">Start with familiar foods and portions</h2>
+                <p>The explorer translates each broad food example into approximate fuel inputs, then combines the whole day before the routing model responds.</p>
+            </div>
+
+            <div class="scope-grid">
+                <div class="scope-is">
+                    <strong>What the food tiles mean</strong>
+                    <p>Each tile is a fixed representative portion for comparing model tendencies. Selecting it again adds another portion.</p>
+                </div>
+                <div class="scope-isnt">
+                    <strong>What they do not mean</strong>
+                    <p>They are not measurements of a specific brand, recipe, restaurant meal, digestion rate, or recommendation about what to eat.</p>
+                </div>
+            </div>
+
+            <p class="visual-caveat">The model interprets combined daily inputs. Breakfast, lunch, and dinner labels are for recognition; meal timing is not simulated.</p>
+        </section>
+
+
+        <section class="learn-section" id="fuel-inputs" aria-labelledby="fuelInputsTitle">
+            <div class="section-intro">
+                <span class="eyebrow">FUEL INPUTS</span>
+                <h2 id="fuelInputsTitle">Three inputs, overlapping jobs</h2>
+                <p>Each input can support several destinations; the bright pathway shows its strongest emphasis in this model.</p>
+            </div>
+
+            <div class="fuel-card-grid">
+                <article class="fuel-learn-card protein-card" id="protein">
+                    <div class="fuel-card-visual">
+                        <img src="assets/icons/biology/input-protein.png" width="512" height="512" alt="">
+                        <span class="mini-route" aria-hidden="true"><i></i><i></i><i></i></span>
+                        <img src="assets/icons/biology/destination-repair.png" width="512" height="512" alt="">
+                    </div>
+                    <div>
+                        <span class="card-kicker">PROTEIN</span>
+                        <h3>Emphasizes rebuilding</h3>
+                        <p>Provides amino-acid building material while the body still needs energy to perform repair.</p>
+                    </div>
+                </article>
+
+                <article class="fuel-learn-card carb-card" id="carbohydrates">
+                    <div class="fuel-card-visual">
+                        <img src="assets/icons/biology/input-carbohydrates.png" width="512" height="512" alt="">
+                        <span class="mini-route" aria-hidden="true"><i></i><i></i><i></i></span>
+                        <div class="twin-tanks" aria-label="Muscle and liver glycogen tanks filling">
+                            <span><i></i></span>
+                            <span><i></i></span>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="card-kicker">CARBOHYDRATES</span>
+                        <h3>Supports ready fuel + glycogen</h3>
+                        <p>Raises glucose availability and helps refill conceptual muscle and liver glycogen stores.</p>
+                    </div>
+                </article>
+
+                <article class="fuel-learn-card fat-card" id="fats">
+                    <div class="fuel-card-visual fork-visual">
+                        <img src="assets/icons/biology/input-fats.png" width="512" height="512" alt="">
+                        <span class="fork-lines" aria-hidden="true"><i></i><i></i></span>
+                        <span class="fork-targets">
+                            <img src="assets/icons/biology/destination-muscle.png" width="512" height="512" alt="">
+                            <img src="assets/icons/biology/destination-fat-storage.png" width="512" height="512" alt="">
+                        </span>
+                    </div>
+                    <div>
+                        <span class="card-kicker">FATS</span>
+                        <h3>Supports use + longer reserve</h3>
+                        <p>Contributes concentrated energy and can also move into—or later return from—longer-term storage.</p>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+
+        <section class="learn-section pool-section" id="fuel-pool" aria-labelledby="fuelPoolTitle">
+            <div class="section-intro">
+                <span class="eyebrow">CIRCULATING FUEL POOL</span>
+                <h2 id="fuelPoolTitle">Supply meets the body’s current pull</h2>
+                <p>Change the kind of day to see why the same incoming fuel can produce a different routing picture.</p>
+            </div>
+
+            <div class="learning-lab">
+                <div class="lab-controls" role="group" aria-label="Fuel pool examples">
+                    <button type="button" data-pool-state="everyday" aria-pressed="true">Everyday</button>
+                    <button type="button" data-pool-state="training" aria-pressed="false">Training</button>
+                    <button type="button" data-pool-state="surplus" aria-pressed="false">More supply</button>
+                </div>
+
+                <div class="pool-demo" data-pool-state="everyday">
+                    <div class="pool-supply" id="approximate-fuel-supply">
+                        <span class="demo-label">SUPPLY</span>
+                        <div class="supply-cluster" aria-hidden="true">
+                            <i class="protein-dot"></i><i class="carb-dot"></i><i class="carb-dot"></i><i class="fat-dot"></i><i class="carb-dot"></i>
+                        </div>
+                        <strong>Fuel In</strong>
+                    </div>
+
+                    <div class="pool-flow incoming-flow" aria-hidden="true"><i></i><i></i><i></i></div>
+
+                    <div class="pool-vessel">
+                        <span class="pool-liquid" aria-hidden="true"></span>
+                        <span class="pool-readout"><small>AVAILABLE</small><output id="learnPoolValue" aria-live="off">60%</output></span>
+                    </div>
+
+                    <div class="pool-flow demand-flow" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+
+                    <div class="demand-pull" id="activity-demand">
+                        <span class="demo-label">ACTIVITY DEMAND</span>
+                        <img src="assets/icons/biology/destination-muscle.png" width="512" height="512" alt="">
+                        <strong id="learnDemandLabel">Everyday pull</strong>
+                        <div class="pull-meter" aria-hidden="true"><i></i></div>
+                    </div>
+
+                    <div class="storage-branch" aria-hidden="true">
+                        <span></span>
+                        <img src="assets/icons/biology/destination-fat-storage.png" width="512" height="512" alt="">
+                    </div>
+                </div>
+
+                <p class="lab-caption" id="poolExplanation" aria-live="polite">Everyday movement leaves a moderate pool available while some fuel continues toward storage and maintenance.</p>
+            </div>
+        </section>
+
+
+        <section class="learn-section" id="destinations" aria-labelledby="destinationsTitle">
+            <div class="section-intro">
+                <span class="eyebrow">BODY RESPONSES</span>
+                <h2 id="destinationsTitle">The body routes by priority</h2>
+                <p>These signals can rise together. A brighter response is an emphasis—not proof that one fuel goes only there.</p>
+            </div>
+
+            <div class="destination-learning-grid">
+                <article class="destination-learn-card brain-card" id="brain-fuel">
+                    <div class="destination-demo">
+                        <img src="assets/icons/biology/destination-brain.png" width="512" height="512" alt="">
+                        <span class="priority-pulse" aria-hidden="true"></span>
+                    </div>
+                    <div><h3>Brain Fuel</h3><p>Continuous priority for available glucose and energy support.</p></div>
+                </article>
+
+                <article class="destination-learn-card liver-card" id="liver-processing">
+                    <div class="destination-demo">
+                        <img src="assets/icons/biology/destination-liver.png" width="512" height="512" alt="">
+                        <span class="split-arrows" aria-hidden="true"><i></i><i></i><i></i></span>
+                    </div>
+                    <div><h3>Liver Processing</h3><p>Converts, stores and releases fuel as the larger system changes.</p></div>
+                </article>
+
+                <article class="destination-learn-card muscle-card" id="working-muscles">
+                    <div class="destination-demo pull-demo">
+                        <span class="pull-particles" aria-hidden="true"><i></i><i></i><i></i></span>
+                        <img src="assets/icons/biology/destination-muscle.png" width="512" height="512" alt="">
+                    </div>
+                    <div><h3>Working Muscles</h3><p>Activity raises the immediate pull from available and stored fuel.</p></div>
+                </article>
+
+                <article class="destination-learn-card repair-card" id="repair">
+                    <div class="destination-demo repair-demo">
+                        <img src="assets/icons/biology/destination-repair.png" width="512" height="512" alt="">
+                        <span class="repair-ring" aria-hidden="true"></span>
+                    </div>
+                    <div><h3>Repair / Rebuilding</h3><p>Activity creates the signal; protein, available energy and repeated time shape support.</p></div>
+                </article>
+
+                <article class="destination-learn-card glycogen-card" id="glycogen">
+                    <div class="destination-demo tank-demo">
+                        <span class="named-tank"><i></i><b>M</b></span>
+                        <span class="named-tank"><i></i><b>L</b></span>
+                    </div>
+                    <div><h3>Glycogen Storage</h3><p>Conceptual quick-access carbohydrate reserves in muscle and liver.</p></div>
+                </article>
+
+                <article class="destination-learn-card storage-card" id="fat-storage">
+                    <div class="destination-demo reserve-demo">
+                        <img src="assets/icons/biology/destination-fat-storage.png" width="512" height="512" alt="">
+                        <span class="reserve-orbit" aria-hidden="true"></span>
+                    </div>
+                    <div><h3>Fat Storage</h3><p>Energy routed toward longer-term reserve in this conceptual model—not measured body-fat change.</p></div>
+                </article>
+            </div>
+        </section>
+
+
+        <section class="learn-section cycle-section" id="stored-fuel-release" aria-labelledby="storageCycleTitle">
+            <div class="section-intro">
+                <span class="eyebrow">STORAGE CYCLE</span>
+                <h2 id="storageCycleTitle">Storage is not a one-way street</h2>
+                <p>Stored reserves released can contribute to current energy needs—the response labeled Fat as Fuel—when demand exceeds incoming supply.</p>
+            </div>
+
+            <div class="learning-lab cycle-lab">
+                <div class="lab-controls" role="group" aria-label="Storage cycle examples">
+                    <button type="button" data-cycle-state="store" aria-pressed="true">Store fuel</button>
+                    <button type="button" data-cycle-state="release" aria-pressed="false">Release fuel</button>
+                </div>
+
+                <div class="cycle-demo" data-cycle-state="store">
+                    <div class="cycle-station cycle-pool">
+                        <span class="cycle-icon pool-icon" aria-hidden="true">◈</span>
+                        <strong>Fuel Pool</strong>
+                        <small>Current supply</small>
+                    </div>
+
+                    <div class="cycle-arrow store-arrow" aria-hidden="true"><span>→</span><i></i><i></i><i></i></div>
+                    <div class="cycle-arrow release-arrow" aria-hidden="true"><span>←</span><i></i><i></i><i></i></div>
+
+                    <div class="cycle-station cycle-reserve">
+                        <img src="assets/icons/biology/destination-fat-storage.png" width="512" height="512" alt="">
+                        <strong>Energy Reserve</strong>
+                        <small id="cycleReserveLabel">Receiving surplus</small>
+                        <div class="reserve-level" aria-hidden="true"><i></i></div>
+                    </div>
+                </div>
+
+                <p class="lab-caption" id="cycleExplanation" aria-live="polite">When supply remains above current demand, storage pressure rises over time.</p>
+            </div>
+        </section>
+
+
+        <section class="learn-section controls-section" id="controls" aria-labelledby="controlsTitle">
+            <div class="section-intro">
+                <span class="eyebrow">READING THE CONTROLS</span>
+                <h2 id="controlsTitle">Controls change the question the machine is answering</h2>
+                <p>They are teaching levers for supply, demand and repeated patterns—not a personal prescription.</p>
+            </div>
+
+            <div class="control-learning-grid">
+                <article class="control-learn-card" id="body-goal">
+                    <span id="current-target-weight" class="anchor-alias" aria-hidden="true"></span>
+                    <div class="weight-direction-demo" aria-hidden="true">
+                        <span>150</span><i>→</i><span>180</span>
+                    </div>
+                    <h3>Current + Target Weight</h3>
+                    <p>Compares the selected example or manual scenario with a target direction; it does not personalize fuel or demand values.</p>
+                </article>
+
+                <article class="control-learn-card" id="approximate-fuel-in">
+                    <div class="calorie-demo" aria-hidden="true">
+                        <span><b>4</b>Protein</span>
+                        <span><b>4</b>Carbs</span>
+                        <span><b>9</b>Fat</span>
+                    </div>
+                    <h3>Approximate Fuel In</h3>
+                    <p>A shared calorie budget built from 4 / 4 / 9 kcal per gram, not calories assigned to exact tissues.</p>
+                </article>
+
+                <article class="control-learn-card" id="macro-locks">
+                    <span id="starting-balance" class="anchor-alias" aria-hidden="true"></span>
+                    <div class="lock-demo" aria-hidden="true">
+                        <span class="locked"><i></i><b>P</b></span>
+                        <span><i></i><b>C</b></span>
+                        <span><i></i><b>F</b></span>
+                    </div>
+                    <h3>Locks + Starting Balance</h3>
+                    <p>Lock a value you want to hold; unlocked macros share the remaining budget from a proposed—not “correct”—balance.</p>
+                </article>
+
+                <article class="control-learn-card" id="repair-recovery-demand">
+                    <div class="repair-equation" aria-hidden="true">
+                        <span>Activity</span><i>+</i><span>Protein</span><i>+</i><span>Fuel</span><b>→</b><img src="assets/icons/biology/destination-repair.png" width="512" height="512" alt="">
+                    </div>
+                    <h3>Repair / Recovery Response</h3>
+                    <p>This is a derived response in the explorer—not a separate dial or a readiness score.</p>
+                </article>
+
+                <article class="control-learn-card horizon-learn-card" id="viewing-horizon">
+                    <span id="adaptation" class="anchor-alias" aria-hidden="true"></span>
+                    <div class="horizon-demo" aria-hidden="true">
+                        <span class="active">Today</span><i></i><span>Days</span><i></i><span>Weeks</span><i></i><span>Months</span>
+                    </div>
+                    <h3>Viewing Horizon</h3>
+                    <p>Repeats the same pattern in the model so longer-term storage, release and repair tendencies become easier to see.</p>
+                </article>
+            </div>
+        </section>
+
+
+        <section class="learn-section direction-section" id="goal-direction" aria-labelledby="goalDirectionTitle">
+            <div class="section-intro">
+                <span class="eyebrow">READING GOAL DIRECTION</span>
+                <h2 id="goalDirectionTitle">Supply versus demand sets direction—not speed</h2>
+                <p>The same supply signal means something different depending on whether the target is higher, similar or lower.</p>
+            </div>
+
+            <div class="learning-lab direction-lab">
+                <div class="lab-controls" role="group" aria-label="Goal direction examples">
+                    <button type="button" data-goal-direction="higher" aria-pressed="true">Target higher</button>
+                    <button type="button" data-goal-direction="maintain" aria-pressed="false">Maintain</button>
+                    <button type="button" data-goal-direction="lower" aria-pressed="false">Target lower</button>
+                </div>
+
+                <div class="direction-demo" data-goal-direction="higher">
+                    <div class="weight-path" aria-label="Example current and target weights">
+                        <span><small>Current</small><output id="directionCurrent">179</output></span>
+                        <i id="directionArrow" aria-hidden="true">↗</i>
+                        <span><small>Target</small><output id="directionTarget">190</output></span>
+                    </div>
+
+                    <p class="direction-summary" id="directionSummary" aria-live="polite">For a higher target, supply above demand points in the intended direction.</p>
+
+                    <div class="supply-direction-grid">
+                        <article class="balance-example balance-below" data-tone="away">
+                            <div class="balance-bars" aria-label="Supply below demand">
+                                <span><small>Supply</small><i></i></span>
+                                <span><small>Demand</small><i></i></span>
+                            </div>
+                            <small class="balance-state">BELOW DEMAND</small>
+                            <strong id="belowResult">Scenario points away from target</strong>
+                            <p id="belowDetail">Leans lower than 179</p>
+                        </article>
+
+                        <article class="balance-example balance-near" data-tone="hold">
+                            <div class="balance-bars" aria-label="Supply near demand">
+                                <span><small>Supply</small><i></i></span>
+                                <span><small>Demand</small><i></i></span>
+                            </div>
+                            <small class="balance-state">NEAR DEMAND</small>
+                            <strong id="nearResult">Scenario near modeled balance</strong>
+                            <p id="nearDetail">Supply remains near modeled demand</p>
+                        </article>
+
+                        <article class="balance-example balance-above" data-tone="toward">
+                            <div class="balance-bars" aria-label="Supply above demand">
+                                <span><small>Supply</small><i></i></span>
+                                <span><small>Demand</small><i></i></span>
+                            </div>
+                            <small class="balance-state">ABOVE DEMAND</small>
+                            <strong id="aboveResult">Scenario points toward target</strong>
+                            <p id="aboveDetail">Leans higher toward 190</p>
+                        </article>
+                    </div>
+                </div>
+
+                <p class="lab-caption">Direction only: the explorer does not predict how much weight changes, how quickly it changes, or exactly where stored energy goes.</p>
+            </div>
+        </section>
+
+
+        <section class="model-scope" id="what-this-model-is" aria-labelledby="modelScopeTitle">
+            <span class="eyebrow">WHAT THIS MODEL IS — AND ISN’T</span>
+            <h2 id="modelScopeTitle">A relationship explorer, not a biological forecast</h2>
+
+            <div class="scope-grid">
+                <div class="scope-is">
+                    <strong>It shows</strong>
+                    <p>Generalized tendencies between fuel supply, tissue demand, storage, release and repeated patterns.</p>
+                </div>
+                <div class="scope-isnt">
+                    <strong>It does not show</strong>
+                    <p>An exact diet, measured metabolism, calories sent to one tissue, medical advice or an individual outcome.</p>
+                </div>
+            </div>
+
+            <a class="explorer-cta explorer-return-link" href="index.html">Return to Your Explorer →</a>
+        </section>
+
+    </main>
+
+    <footer class="learn-footer">
+        <span>An educational model using approximate food examples—not a measurement of digestion, metabolism, or an individual outcome.</span>
+        <span>© 2026 Anthony Adams. All rights reserved.</span>
+    </footer>
+
+</div>
+
+<script src="learn.js?v=20260817-1"></script>
+
+</body>
+</html>
