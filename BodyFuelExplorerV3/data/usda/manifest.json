@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "generatedAt": "2026-08-21T20:05:01.733Z",
+  "attribution": "U.S. Department of Agriculture, Agricultural Research Service. FoodData Central.",
+  "license": "CC0 1.0 Universal",
+  "records": 13522,
+  "bytes": 1558168,
+  "indexSha256": "fd8b9f1c7e2a9d59e5feae533d7746fce72961f6d48af781163e03bfc4130de9",
+  "sources": [
+    {
+      "label": "Foundation Foods",
+      "release": "2026-04",
+      "file": "FoodData_Central_foundation_food_json_2026-04-30.json",
+      "sha256": "27d1fe3fd89edfbe528ed915da5619320e1d004d4594603a1b19bdb1511590cc"
+    },
+    {
+      "label": "SR Legacy",
+      "release": "2018-04",
+      "file": "FoodData_Central_sr_legacy_food_json_2018-04.json",
+      "sha256": "70d4235ae3a2bdf48a7b9eaa1286a83fa67b6f3270436c9ce8b008213f500129"
+    },
+    {
+      "label": "FNDDS",
+      "release": "2021-2023 / 2024-10 release",
+      "file": "surveyDownload.json",
+      "sha256": "2e7eb9fda92adf1d4d784dba5eaa3a7fd4418cd86ccff383c7c9294d79e9b808"
+    }
+  ]
+}
