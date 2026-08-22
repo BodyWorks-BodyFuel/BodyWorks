@@ -470,7 +470,7 @@ function updateEstimatedFoodEnergy() {
     );
     foodElements.estimatedEnergyMeterFill.style.width = `${energyMeterPercent}%`;
     foodElements.modelEnergyContext.textContent =
-        `Model context: ${fixedActivityContext.label} ≈ ${Math.round(fixedActivityContext.demand).toLocaleString()} kcal/day`;
+        `Model context: fixed baseline reference ≈ ${Math.round(fixedActivityContext.demand).toLocaleString()} kcal/day`;
 }
 
 
@@ -478,8 +478,8 @@ function modelComparisonMessage(state, time = controls.time.value) {
     if (!state) {
         return {
             balanceState: "empty",
-            title: "No dietary inputs selected",
-            message: "Add a food below to bring the fuel pathways to life."
+            title: "No foods selected",
+            message: "Choose a food to see what it contributes to the living system."
         };
     }
 
@@ -494,7 +494,7 @@ function modelComparisonMessage(state, time = controls.time.value) {
                 : "Reserve contribution is more visible",
             message: repeated
                 ? "If this same supply-to-reference relationship repeats across weeks, reserve-use, repair, and storage tendencies become easier to see."
-                : "This selected day supplies less energy than the Everyday Movement model reference, so reserve contribution becomes more visible."
+                : "This selected day supplies less energy than the fixed baseline model reference, so reserve contribution becomes more visible."
         };
     }
 
@@ -502,14 +502,14 @@ function modelComparisonMessage(state, time = controls.time.value) {
         return {
             balanceState,
             title: "Storage tendency is more prominent",
-            message: "This selected day supplies more energy than the Everyday Movement model reference, so storage tendency becomes more prominent."
+            message: "This selected day supplies more energy than the fixed baseline model reference, so storage tendency becomes more prominent."
         };
     }
 
     return {
         balanceState,
         title: "Priorities remain distributed",
-        message: "Incoming fuel sits near the Everyday Movement model reference, so the model’s priorities remain more distributed."
+        message: "Incoming food energy sits near the fixed baseline model reference, so the model’s priorities remain more distributed."
     };
 }
 
@@ -1917,10 +1917,10 @@ function renderEmptyModelState() {
     document.querySelector(".routing-stage").classList.remove("is-releasing");
     document.querySelector(".routing-stage").dataset.balanceState = "empty";
     document.querySelector(".stage-message").dataset.balanceState = "empty";
-    document.getElementById("balanceSummary").textContent = "No dietary inputs supplied";
-    document.getElementById("stateTitle").textContent = "No dietary inputs selected";
+    document.getElementById("balanceSummary").textContent = "Waiting for a food";
+    document.getElementById("stateTitle").textContent = "No foods selected";
     document.getElementById("stateDescription").textContent =
-        "Add a food below to bring the fuel pathways to life.";
+        "Choose a food to see what it contributes to the living system.";
     ["Protein", "Carbs", "Fats"].forEach(name => {
         document.getElementById(`stage${name}Value`).textContent = "Tap to learn";
         const total = document.getElementById(`stage${name}Total`);

@@ -10,7 +10,7 @@ The current food-first narrative, scope boundaries, and decision filter are docu
 
 ### Body Fuel Flow Explorer
 
-A standalone, visual-first learning tool for exploring how one conceptual human system responds to changing fuel inputs, activity demand, routing priorities, storage, release, and repeated patterns over time.
+A standalone, visual-first learning tool for exploring what familiar foods contribute, how those resources relate to a conceptual living body, and how repeated food patterns take shape over time.
 
 - [Open the live explorer](https://bodyworks-bodyfuel.github.io/BodyWorks/BodyFuelExplorer/)
 - [Browse the project files](./BodyFuelExplorer/)

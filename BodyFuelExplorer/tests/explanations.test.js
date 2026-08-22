@@ -45,9 +45,9 @@ test("estimated energy help explains units, variability, partial days, and timel
     assert.match(allCopy, /do not multiply it into a cumulative total/);
     assert.match(allCopy, /not a personal target/);
     assert.match(allCopy, /does not predict exactly how much energy your body will use or store/);
-    assert.match(allCopy, /fixed Everyday Movement model reference of approximately 2,150 kcal\/day/);
-    assert.match(allCopy, /general scenario—not your calorie need, target, or measured energy use/);
-    assert.match(allCopy, /above, near, or below that reference/);
+    assert.match(allCopy, /fixed baseline reference of approximately 2,150 kcal\/day/);
+    assert.match(allCopy, /general modeling anchor—not your calorie need, an exercise estimate, or measured energy use/);
+    assert.match(allCopy, /relative emphasis of storage and stored-reserve contribution/);
 });
 
 test("explanations teach brightness without claiming measurement or direct routing", () => {

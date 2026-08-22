@@ -21,8 +21,8 @@ test("core dependencies load in stable layer order", () => {
         "data/usda/foods-index.js?v=20260821-1",
         "usda.js?v=20260821-2",
         "narration.js?v=20260819-2",
-        "explanations.js?v=20260821-3",
-        "app.js?v=20260821-23",
+        "explanations.js?v=20260822-1",
+        "app.js?v=20260822-1",
         "guide-scenarios.js?v=20260819-1",
         "guide.js?v=20260821-6",
         "intro.js?v=20260820-1",
@@ -105,8 +105,8 @@ test("the core starts empty without running a physiological scenario", () => {
     assert.ok(calculationGuard);
     assert.match(calculationGuard[0], /foodExperience\.lines\.length === 0/);
     assert.match(calculationGuard[0], /renderEmptyModelState\(\);[\s\S]*?return;/);
-    assert.match(html, /Add a food below to bring the fuel pathways to life/);
-    assert.match(app, /No dietary inputs selected/);
+    assert.match(html, /Choose a food to see what it contributes/);
+    assert.match(app, /No foods selected/);
 });
 
 
@@ -331,7 +331,7 @@ test("estimated food energy is a neutral live summary driven by food totals", ()
 });
 
 
-test("the visible Everyday Movement context comes from the canonical fixed profile", () => {
+test("the visible fixed-baseline context comes from the canonical fixed profile", () => {
     const heroReadout = html.match(/<aside class="hero-energy-readout"[\s\S]*?<\/aside>/)[0];
     const everyday = model.getActivityProfile(1);
     const state = model.calculateBodyState({
@@ -344,7 +344,7 @@ test("the visible Everyday Movement context comes from the canonical fixed profi
 
     assert.match(heroReadout, /id="modelEnergyContext"/);
     assert.match(app, /fixedActivityContext = Object\.freeze\(getActivityProfile\(1\)\)/);
-    assert.match(app, /Model context: \$\{fixedActivityContext\.label\} ≈ \$\{Math\.round\(fixedActivityContext\.demand\)\.toLocaleString\(\)\} kcal\/day/);
+    assert.match(app, /Model context: fixed baseline reference ≈ \$\{Math\.round\(fixedActivityContext\.demand\)\.toLocaleString\(\)\} kcal\/day/);
     assert.equal(everyday.label, "Everyday Movement");
     assert.equal(everyday.demand, state.energyDemand);
     assert.equal(state.energyDemand, 2150);
@@ -356,10 +356,10 @@ test("the visible Everyday Movement context comes from the canonical fixed profi
 
 test("hero and timeline comparison copy uses the existing balance classification without classifying empty food", () => {
     assert.match(app, /const balanceState = classifyEnergyBalance\(state\.balance\)/);
-    assert.match(app, /This selected day supplies less energy than the Everyday Movement model reference, so reserve contribution becomes more visible\./);
+    assert.match(app, /This selected day supplies less energy than the fixed baseline model reference, so reserve contribution becomes more visible\./);
     assert.match(app, /If this same supply-to-reference relationship repeats across weeks, reserve-use, repair, and storage tendencies become easier to see\./);
-    assert.match(app, /This selected day supplies more energy than the Everyday Movement model reference, so storage tendency becomes more prominent\./);
-    assert.match(app, /Incoming fuel sits near the Everyday Movement model reference, so the model’s priorities remain more distributed\./);
+    assert.match(app, /This selected day supplies more energy than the fixed baseline model reference, so storage tendency becomes more prominent\./);
+    assert.match(app, /Incoming food energy sits near the fixed baseline model reference, so the model’s priorities remain more distributed\./);
     const emptyGuard = app.match(/function calculate\(\) \{[\s\S]*?const state = calculateBodyState/)[0];
     assert.ok(emptyGuard.indexOf("renderEmptyModelState();") < emptyGuard.indexOf("calculateBodyState"));
     assert.doesNotMatch(emptyGuard.slice(0, emptyGuard.indexOf("calculateBodyState")), /classifyEnergyBalance/);
@@ -471,7 +471,7 @@ test("food help remains an independent explanation action", () => {
 
 test("live and screen-reader explanations stay concise and debounced", () => {
     assert.match(app, /modelComparisonMessage\(foodExperience\.currentState/);
-    assert.match(app, /Everyday Movement model reference/);
+    assert.match(app, /fixed baseline model reference/);
     assert.match(app, /announcementTimer/);
     assert.match(app, /setTimeout\([\s\S]*?420/);
     assert.match(html, /class="stage-message core-response"[\s\S]*?aria-live="polite"/);
@@ -604,7 +604,7 @@ test("relative assets support root and GitHub Pages subpath hosting", () => {
         assert.doesNotMatch(reference, /file:\/\//, reference);
     });
     assert.match(html, /src="assets\/body\/body-anatomical-v4-alpha\.png"/);
-    assert.match(html, /src="app\.js\?v=20260821-23"/);
+    assert.match(html, /src="app\.js\?v=20260822-1"/);
 });
 
 

@@ -1,15 +1,19 @@
 # Body Fuel Flow Explorer
 
 Body Fuel Flow Explorer is a standalone educational webpage for exploring how
-one conceptual human system responds to a selected daily food pattern and how
-its routing priorities can be viewed across repeated patterns over time.
+familiar foods contribute nutrient and energy resources to one conceptual
+living body and how repeated food patterns take shape over time.
+
+The current product direction, scope boundaries, and decision filter are
+documented in the [BodyWorks Experience North Star](../docs/EXPERIENCE_NORTH_STAR.md).
 
 The primary experience has three parts: familiar foods and portions, a Pattern
 Timeline, and the animated body response. A small, versioned catalog translates
 food selections into approximate model inputs under the surface. Technical
-totals, direct model controls, activity, weight context, presets, example days,
-and the earlier multi-view experience remain preserved backstage for later use,
-but are intentionally absent from the current forward-facing interface.
+totals, direct model controls, legacy activity and weight context, presets,
+example days, and the earlier multi-view experience remain preserved backstage
+for historical and technical reference. They are not part of the current
+forward-facing direction.
 
 It is designed to run entirely in the browser with no server, account, or
 runtime dependency. Open `index.html` in Safari or another modern browser.

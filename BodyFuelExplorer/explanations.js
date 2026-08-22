@@ -49,7 +49,7 @@
             }),
             muscle: Object.freeze({
                 title: "Working Muscles",
-                body: "Working tissue draws on available fuel according to the model’s fixed Everyday Movement reference. Brightness shows relative routing tendency, not personal exercise use or calorie burn."
+                body: "Working tissue has ongoing energy needs within the model’s fixed baseline reference. Brightness shows relative routing tendency—not personal exercise use, measured activity, or calorie burn."
             }),
             repair: Object.freeze({
                 title: "Repair & Rebuilding",
@@ -73,7 +73,7 @@
             }),
             "estimated-energy": Object.freeze({
                 title: "Estimated food energy",
-                body: "A calorie is a unit of food energy. Nutrition Calories are kilocalories (kcal). This estimate combines representative portions using approximate protein, carbohydrate, and fat content. Actual calories vary by portion, recipe, preparation, and brand. It is not a personal target and does not predict exactly how much energy your body will use or store.\n\nThe hero compares the selected daily food pattern with a fixed Everyday Movement model reference of approximately 2,150 kcal/day. This reference represents a general scenario—not your calorie need, target, or measured energy use. Food energy above, near, or below that reference helps the model decide whether storage or stored-reserve contribution should become more prominent.",
+                body: "A calorie is a unit of food energy. Nutrition Calories are kilocalories (kcal). This estimate combines representative portions using approximate protein, carbohydrate, and fat content. Actual calories vary by portion, recipe, preparation, and brand. Calories describe one dimension of the food—not its full contribution—and this estimate is not a personal target.\n\nThe current model compares a selected daily food pattern with a fixed baseline reference of approximately 2,150 kcal/day. This is a general modeling anchor—not your calorie need, an exercise estimate, or measured energy use—and it does not predict exactly how much energy your body will use or store. Its role is to help the model vary the relative emphasis of storage and stored-reserve contribution.",
                 detailsTitle: "How to read this estimate",
                 details: Object.freeze([
                     "Selected foods may represent only part of a day.",

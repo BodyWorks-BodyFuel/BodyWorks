@@ -22,9 +22,9 @@ test("purpose statement uses one reusable accessible dialog", () => {
 
 test("intro answers purpose without becoming a tutorial or prescription", () => {
     assert.match(html, /What is this\?/);
-    assert.match(html, /What is the body trying to do with what I give it\?/);
+    assert.match(html, /What does this food bring into the body\?/);
     assert.match(html, /What could this help you explore\?/);
-    assert.match(html, /You don't need to find the perfect setting/);
+    assert.match(html, /Start with something familiar/);
     assert.match(html, /conceptual educational model—not a diet prescription/);
     assert.doesNotMatch(html, /Step 1|Next step|correct answer/i);
 });
