@@ -2,6 +2,10 @@
 
 BodyWorks is a home for interactive Rhythm & Repair projects that make complex body systems easier to see, explore, and discuss.
 
+## Product direction
+
+The current food-first narrative, scope boundaries, and decision filter are documented in the [BodyWorks Experience North Star](./docs/EXPERIENCE_NORTH_STAR.md).
+
 ## Projects
 
 ### Body Fuel Flow Explorer
