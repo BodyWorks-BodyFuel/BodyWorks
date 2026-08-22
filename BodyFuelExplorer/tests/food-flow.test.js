@@ -20,7 +20,7 @@ test("learning links form a visible, named queue", () => {
     assert.match(html, /class="learning-queue-label">Learn</);
     assert.match(html, /id="introReopenButton"[\s\S]*?Explorer basics/);
     assert.match(html, /id="foodFlowReopenButton"[\s\S]*?My Food flow/);
-    assert.match(html, /id="guideReplayButton"[\s\S]*?Guided body tour/);
+    assert.match(html, /class="guide-replay learning-link" id="guideReplayButton"[\s\S]*?Guided body tour/);
     assert.match(css, /\.learning-queue \{[\s\S]*?border:[\s\S]*?background:[\s\S]*?box-shadow:/);
     assert.match(css, /\.learning-queue-label \{[\s\S]*?text-transform: uppercase/);
 });
