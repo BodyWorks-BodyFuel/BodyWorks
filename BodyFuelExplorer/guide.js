@@ -33,7 +33,7 @@
                 this.step = 0;
                 this.snapshot = null;
                 this.wellLoaded = false;
-                this.realAdditionSeen = false;
+                this.contrastLoaded = false;
                 this.weeksSeen = false;
                 this.viewedEdges = new Set();
             }
@@ -54,7 +54,7 @@
 
             next() {
                 if (this.step === 2 && !this.wellLoaded) return this.step;
-                if (this.step === 3 && !this.realAdditionSeen) return this.step;
+                if (this.step === 3 && !this.contrastLoaded) return this.step;
                 if (this.step === 6 && !this.weeksSeen) return this.step;
                 return this.go(this.step + 1);
             }
@@ -67,8 +67,8 @@
                 this.wellLoaded = true;
             }
 
-            markRealAddition() {
-                this.realAdditionSeen = true;
+            markContrastLoaded() {
+                this.contrastLoaded = true;
             }
 
             markEdgeViewed(name) {
@@ -251,8 +251,6 @@
             }
 
             function visibilityElementFor(target) {
-                const foodRow = target.closest?.(".food-tile-wrap");
-                if (foodRow) return foodRow;
                 if (target.closest?.(".routing-stage")) {
                     return doc.querySelector(".routing-stage") || target;
                 }
@@ -284,28 +282,9 @@
                 };
             }
 
-            function revealFoodTargetInsideCatalog(behavior) {
-                const row = activeTarget?.closest?.(".food-tile-wrap");
-                const grid = doc.getElementById("foodGrid");
-                if (!row || !grid?.contains(row)) return;
-                const gridRect = grid.getBoundingClientRect();
-                const rowRect = row.getBoundingClientRect();
-                const inset = 10;
-                let delta = 0;
-                if (rowRect.top < gridRect.top + inset) {
-                    delta = rowRect.top - gridRect.top - inset;
-                } else if (rowRect.bottom > gridRect.bottom - inset) {
-                    delta = rowRect.bottom - gridRect.bottom + inset;
-                }
-                if (Math.abs(delta) > 1) {
-                    grid.scrollTo({ top: grid.scrollTop + delta, behavior });
-                }
-            }
-
             function ensureTargetVisible({ settle = true, instant = false } = {}) {
                 if (!machine.active || !activeTarget || elements.coach.hidden) return;
                 const behavior = instant ? "auto" : guideScrollBehavior();
-                revealFoodTargetInsideCatalog(behavior);
                 browserRoot.requestAnimationFrame(() => {
                     if (!activeVisibilityTarget) return;
                     const { visibilityTarget, safeRegion } = layoutSnapshot();
@@ -350,7 +329,7 @@
                 if (!activeTarget) return;
                 targetDescription = activeTarget.getAttribute("aria-describedby");
                 activeHighlight = focus
-                    ? activeTarget.closest(".catalog-portion-stepper, .timeline-options") || activeTarget
+                    ? activeTarget.closest(".timeline-options") || activeTarget
                     : activeTarget;
                 activeVisibilityTarget = visibilityElementFor(activeTarget);
                 activeHighlight.classList.add("guide-spotlight-target");
@@ -423,7 +402,10 @@
                     if (!machine.wellLoaded) {
                         elements.next.hidden = true;
                         actionButton("Load the well-matched example", () => {
-                            bridge.loadScenario(scenarios.wellMatched.lines, { timeline: 0 });
+                            bridge.loadScenario(scenarios.wellMatched.lines, {
+                                timeline: 0,
+                                preserveBrowser: true
+                            });
                             machine.markWellLoaded();
                             announce("Well-matched example loaded in the explorer.");
                             renderStep();
@@ -435,16 +417,30 @@
                 }
 
                 if (machine.step === 3) {
-                    const food = browserRoot.BodyFuelFoods.catalogById[
-                        scenarios.aboveReference.additionFoodId
-                    ];
-                    setCopy("Create a visible change", [
-                        `The model selected ${food.name.toLowerCase()} as the strongest sensible one-portion contrast from its bounded candidates.`,
-                        `Press the real + control for ${food.name}. The guide will wait for that exact change.`
+                    const changed = largestChangeCopy();
+                    setCopy("Watch the hero reprioritize", machine.contrastLoaded ? [
+                        `This teaching contrast makes changes in ${changed} easier to see.`,
+                        "The body, pathways, and response cards are the lesson here; food search and saved-food organization have their own My Food flow guide."
+                    ] : [
+                        "Load a temporary stronger contrast and watch the hero, pathways, and response cards change together.",
+                        "This example is for learning the display—not a suggested eating pattern."
                     ]);
-                    elements.next.hidden = true;
-                    const plus = bridge.revealFood(food.id);
-                    spotlight(plus, { focus: true });
+                    if (!machine.contrastLoaded) {
+                        elements.next.hidden = true;
+                        actionButton("Show the hero contrast", () => {
+                            bridge.loadScenario(scenarios.aboveReference.lines, {
+                                timeline: 0,
+                                preserveBrowser: true
+                            });
+                            machine.markContrastLoaded();
+                            announce("Hero contrast loaded in the explorer.");
+                            renderStep();
+                        }, "guide-primary-action");
+                        spotlight(".routing-stage");
+                    } else {
+                        holdEmphasis(scenarios.aboveReference.largestChanges.map(change => change.key));
+                        spotlight(".destination-stack");
+                    }
                 }
 
                 if (machine.step === 4) {
@@ -463,7 +459,10 @@
                         "Extreme examples make visual differences easier to recognize. They are demonstrations—not suggested eating patterns or predictions of an individual outcome."
                     ]);
                     const above = actionButton("Much more than the model reference", () => {
-                        bridge.loadScenario(scenarios.aboveReference.lines, { timeline: 0 });
+                        bridge.loadScenario(scenarios.aboveReference.lines, {
+                            timeline: 0,
+                            preserveBrowser: true
+                        });
                         machine.markEdgeViewed("above");
                         elements.status.textContent =
                             `${formatEnergy(scenarios.aboveReference.totalEnergy)} kcal in this modeled day; processing and storage tendencies become more prominent.`;
@@ -474,7 +473,10 @@
                     }, "guide-edge-action");
                     above.setAttribute("aria-pressed", String(machine.viewedEdges.has("above")));
                     const below = actionButton("Much less than the model reference", () => {
-                        bridge.loadScenario(scenarios.belowReference.lines, { timeline: 0 });
+                        bridge.loadScenario(scenarios.belowReference.lines, {
+                            timeline: 0,
+                            preserveBrowser: true
+                        });
                         machine.markEdgeViewed("below");
                         elements.status.textContent =
                             `${formatEnergy(scenarios.belowReference.totalEnergy)} kcal in this deliberately exaggerated modeled day; reserve contribution becomes prominent.`;
@@ -506,13 +508,12 @@
                 if (machine.step === 7) {
                     setCopy("Now make the explorer yours", [
                         "Foods + visible model context + repeated timeline = changing hero priorities.",
-                        "Choose how you want to leave this temporary lesson."
+                        "Restore what you had before the tour, or keep the temporary teaching example."
                     ]);
                     elements.back.hidden = false;
                     elements.next.hidden = true;
-                    actionButton("Clear lesson and build my day", () => complete("clear"), "guide-primary-action");
+                    actionButton("Restore what I had", () => complete("restore"), "guide-primary-action");
                     actionButton("Keep this example", () => complete("keep"));
-                    actionButton("Restore what I had", () => complete("restore"));
                     spotlight(elements.replay);
                 }
 
@@ -530,6 +531,7 @@
 
             function startGuide(trigger = elements.replay) {
                 if (machine.active) return;
+                browserRoot.BodyFuelFoodFlowController?.exit?.();
                 previousFocus = trigger || doc.activeElement;
                 elements.invitation.hidden = true;
                 machine.start(bridge.capture());
@@ -565,7 +567,6 @@
             }
 
             function complete(choice) {
-                if (choice === "clear") bridge.clearLesson();
                 if (choice === "restore") bridge.restore(machine.snapshot);
                 if (choice === "keep") bridge.persist();
                 closeGuide({ restore: false, preference: "completed" });
@@ -579,11 +580,17 @@
 
             function goBack() {
                 if (machine.step === 4) {
-                    bridge.loadScenario(scenarios.wellMatched.lines, { timeline: 0 });
-                    machine.realAdditionSeen = false;
+                    bridge.loadScenario(scenarios.wellMatched.lines, {
+                        timeline: 0,
+                        preserveBrowser: true
+                    });
+                    machine.contrastLoaded = false;
                 }
                 if (machine.step === 5) {
-                    bridge.loadScenario(scenarios.aboveReference.lines, { timeline: 0 });
+                    bridge.loadScenario(scenarios.aboveReference.lines, {
+                        timeline: 0,
+                        preserveBrowser: true
+                    });
                 }
                 machine.back();
                 renderStep();
@@ -602,23 +609,6 @@
 
             doc.addEventListener("click", event => {
                 if (!machine.active) return;
-                if (event.target.closest(".food-filter")) {
-                    scheduleTargetVisibility({ delay: 120 });
-                }
-                const plus = event.target.closest(".catalog-portion-increase");
-                if (
-                    machine.step === 3 &&
-                    plus?.closest("[data-food-id]")?.dataset.foodId === scenarios.aboveReference.additionFoodId &&
-                    bridge.getQuantity(scenarios.aboveReference.additionFoodId) >= 1
-                ) {
-                    machine.markRealAddition();
-                    announce("The requested portion was added. The hero response has changed.");
-                    browserRoot.setTimeout(() => {
-                        machine.go(4);
-                        renderStep();
-                    }, 120);
-                }
-
                 const timeline = event.target.closest("[data-timeline]");
                 if (machine.step === 6 && timeline?.dataset.timeline === "2") {
                     machine.markWeeks();

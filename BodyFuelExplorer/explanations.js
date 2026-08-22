@@ -83,7 +83,7 @@
             }),
             "food-portions": Object.freeze({
                 title: "Representative food portions",
-                body: "Each tile uses one familiar portion and a fixed approximate estimate under the surface. It is a playful teaching example—not a measurement of a particular recipe, brand, restaurant meal, or person."
+                body: "Each tile uses one familiar portion and a fixed approximate estimate under the surface. When USDA does not provide a household measure, the Explorer translates its 100 gram reference to about 3½ ounces while keeping the exact USDA reference for the calculation. It is a playful teaching example—not a measurement of a particular recipe, brand, restaurant meal, or person."
             })
         });
     }

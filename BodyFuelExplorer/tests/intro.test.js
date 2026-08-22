@@ -15,7 +15,7 @@ const css = read("style.css");
 test("purpose statement uses one reusable accessible dialog", () => {
     assert.match(html, /<dialog class="explorer-intro" id="explorerIntro"/);
     assert.match(html, /aria-labelledby="explorerIntroTitle"/);
-    assert.match(html, /id="introReopenButton"[\s\S]*?Understanding the Explorer/);
+    assert.match(html, /id="introReopenButton"[\s\S]*?Explorer basics/);
     assert.equal((html.match(/id="explorerIntro"/g) || []).length, 1);
     assert.equal((html.match(/id="introEnterButton"/g) || []).length, 1);
 });

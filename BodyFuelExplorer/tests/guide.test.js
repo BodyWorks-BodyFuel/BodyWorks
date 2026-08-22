@@ -16,7 +16,7 @@ const scenarios = read("guide-scenarios.js");
 const css = read("style.css");
 
 
-test("guide state machine gates real food and Weeks actions", () => {
+test("guide state machine gates hero contrast and Weeks actions", () => {
     const machine = new guideApi.GuideStateMachine();
     const snapshot = { foodLines: [] };
 
@@ -26,7 +26,7 @@ test("guide state machine gates real food and Weeks actions", () => {
     machine.markWellLoaded();
     assert.equal(machine.next(), 3);
     assert.equal(machine.next(), 3);
-    machine.markRealAddition();
+    machine.markContrastLoaded();
     assert.equal(machine.next(), 4);
     assert.equal(machine.next(), 5);
     machine.markEdgeViewed("above");
@@ -43,7 +43,7 @@ test("guide state machine gates real food and Weeks actions", () => {
 
 
 test("entry is optional, persistent, and permanently replayable", () => {
-    assert.match(html, /id="guideReplayButton"[\s\S]*?Show me how this works/);
+    assert.match(html, /id="guideReplayButton"[\s\S]*?Guided body tour/);
     assert.match(html, /id="guideInvitation"[\s\S]*?Want a 90-second guided example/);
     assert.match(html, /id="guideInvitationStart">Show me/);
     assert.match(html, /id="guideInvitationDismiss">Explore myself/);
@@ -57,36 +57,35 @@ test("entry is optional, persistent, and permanently replayable", () => {
 });
 
 
-test("guide snapshots and restores complete explorer state without Clear history mutations", () => {
+test("guide snapshots and restores complete explorer state without obsolete Clear history", () => {
     const bridge = app.match(/window\.BodyFuelExplorerGuideBridge = Object\.freeze\(\{[\s\S]*?\n\}\);/)[0];
     [
         "foodLines", "filter", "scrollTop", "dayKind", "source",
-        "lastClearedLines", "undoClearHidden", "flowMotionPaused", "motionUserOverride"
+        "flowMotionPaused", "motionUserOverride"
     ].forEach(field => assert.match(`${bridge}\n${app}`, new RegExp(field)));
     assert.match(bridge, /restore\(snapshot\)/);
-    assert.match(bridge, /foodExperience\.lastClearedLines = snapshot\.lastClearedLines/);
     assert.match(bridge, /foodElements\.grid\.scrollTop = Number\(snapshot\.scrollTop\)/);
     assert.match(guide, /closeGuide\(\{ restore = true/);
     assert.match(guide, /if \(restore\) bridge\.restore\(machine\.snapshot\)/);
-    assert.doesNotMatch(bridge.match(/loadScenario\(lines,[\s\S]*?\n    \},/)[0], /clearFoodDay\(|lastClearedLines = cloneLines\(foodExperience\.lines\)/);
+    assert.doesNotMatch(bridge, /clearFoodDay|lastClearedLines|undoClear/);
 });
 
 
-test("completion exposes clear, keep, and restore choices", () => {
-    assert.match(guide, /Clear lesson and build my day/);
+test("completion keeps the body tour separate from food management", () => {
     assert.match(guide, /Keep this example/);
     assert.match(guide, /Restore what I had/);
-    assert.match(guide, /if \(choice === "clear"\) bridge\.clearLesson\(\)/);
     assert.match(guide, /if \(choice === "restore"\) bridge\.restore\(machine\.snapshot\)/);
     assert.match(guide, /if \(choice === "keep"\) bridge\.persist\(\)/);
-    assert.match(app, /clearLesson\(\)[\s\S]*?foodExperience\.lines = \[\][\s\S]*?controls\.time\.value = "0"/);
+    assert.doesNotMatch(guide, /Clear lesson and build my day|bridge\.clearLesson/);
 });
 
 
-test("guide uses real controls for the food change and Weeks gates", () => {
-    assert.match(guide, /bridge\.revealFood\(food\.id\)/);
-    assert.match(guide, /event\.target\.closest\("\.catalog-portion-increase"\)/);
-    assert.match(guide, /bridge\.getQuantity\(scenarios\.aboveReference\.additionFoodId\) >= 1/);
+test("guide uses a hero-only contrast and the real Weeks gate", () => {
+    assert.match(guide, /Show the hero contrast/);
+    assert.match(guide, /machine\.markContrastLoaded\(\)/);
+    assert.match(guide, /spotlight\("\.routing-stage"\)/);
+    assert.match(guide, /spotlight\("\.destination-stack"\)/);
+    assert.doesNotMatch(guide, /revealFood|catalog-portion-increase|getQuantity/);
     assert.match(guide, /spotlight\('\[data-timeline="2"\]'/);
     assert.match(guide, /timeline\?\.dataset\.timeline === "2"/);
     assert.match(guide, /machine\.markWeeks\(\)/);
@@ -97,6 +96,8 @@ test("guide uses real controls for the food change and Weeks gates", () => {
 test("edge examples, held emphasis, and cleanup use the real explorer", () => {
     assert.match(guide, /bridge\.loadScenario\(scenarios\.aboveReference\.lines/);
     assert.match(guide, /bridge\.loadScenario\(scenarios\.belowReference\.lines/);
+    assert.match(guide, /preserveBrowser: true/);
+    assert.match(app, /if \(!options\.preserveBrowser\)/);
     assert.match(guide, /holdEmphasis\(\["release", "fatUse"\]\)/);
     assert.match(guide, /clearHeldEmphasis\(\)/);
     assert.match(css, /body-stage\.guide-held-emphasis \.guide-held-target\.destination-card/);
@@ -111,10 +112,9 @@ test("docked coach supports keyboard exit, focus return, and reduced motion", ()
     assert.match(guide, /event\.defaultPrevented \|\| doc\.getElementById\("coreExplanationDialog"\)\?\.open/);
     assert.match(guide, /closeGuide\(\)/);
     assert.match(guide, /elements\.replay \|\| previousFocus/);
-    assert.match(guide, /activeHighlight = focus[\s\S]*?catalog-portion-stepper, \.timeline-options/);
+    assert.match(guide, /activeHighlight = focus[\s\S]*?\.timeline-options/);
     assert.match(guide, /activeTarget\.setAttribute\("aria-describedby", "guideBody"\)/);
     assert.match(guide, /prefersReducedMotion\(\) \|\| state\.motionPaused \? "auto" : "smooth"/);
-    assert.match(guide, /grid\.scrollTo\(\{ top: grid\.scrollTop \+ delta, behavior \}\)/);
     assert.match(guide, /browserRoot\.scrollBy\(\{ top: delta, behavior \}\)/);
     assert.match(guide, /instant \? "auto" : guideScrollBehavior\(\)/);
     assert.match(guide, /activeTarget\.focus\(\{ preventScroll: true \}\)/);
@@ -142,11 +142,11 @@ test("guide is a measured bottom dock with temporary document reservation", () =
 test("target positioning uses the unobstructed region and refreshes spotlight geometry", () => {
     assert.match(guide, /const safeTop = 8[\s\S]*?safeBottom = Math\.max\(safeTop \+ 44, dock\.top - 18\)/);
     assert.match(guide, /visibilityElementFor\(target\)[\s\S]*?\.routing-stage[\s\S]*?#patternTimelineSection/);
-    assert.match(guide, /revealFoodTargetInsideCatalog\(behavior\)[\s\S]*?browserRoot\.scrollBy/);
+    assert.doesNotMatch(guide, /revealFoodTargetInsideCatalog|food-tile-wrap/);
     assert.match(guide, /data-guide-target-active/);
     assert.match(guide, /data-guide-visibility-target/);
     assert.match(guide, /elements\.coach\.scrollTop = 0/);
-    assert.match(guide, /scheduleTargetVisibility\(\{ delay: 120 \}\)/);
+    assert.match(guide, /scheduleTargetVisibility\(\{ delay: 60 \}\)/);
     assert.match(guide, /doc\.fonts\?\.ready\?\.then\(\(\) => scheduleTargetVisibility\(\)\)/);
     assert.doesNotMatch(guide, /addEventListener\("scroll",/);
 });

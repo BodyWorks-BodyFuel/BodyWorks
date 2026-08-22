@@ -111,6 +111,14 @@
             return lines.map(line => ({
                 foodId: line.foodId,
                 quantity: Number(line.quantity),
+                ...(line.food
+                    ? {
+                        food: {
+                            ...line.food,
+                            estimate: { ...line.food.estimate }
+                        }
+                    }
+                    : {}),
                 ...(line.exampleMeals
                     ? { exampleMeals: [...line.exampleMeals] }
                     : {})
@@ -125,7 +133,7 @@
             const totals = { protein: 0, carbs: 0, fats: 0, calories: 0 };
 
             lines.forEach(line => {
-                const item = catalogById[line.foodId];
+                const item = catalogById[line.foodId] || line.food;
                 const quantity = Number(line.quantity);
 
                 if (!item || !Number.isFinite(quantity) || quantity <= 0) {

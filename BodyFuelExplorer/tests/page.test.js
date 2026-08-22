@@ -18,17 +18,28 @@ test("core dependencies load in stable layer order", () => {
     const sources = [
         "model.js?v=20260819-1",
         "foods.js?v=20260818-2",
+        "data/usda/foods-index.js?v=20260821-1",
+        "usda.js?v=20260821-2",
         "narration.js?v=20260819-2",
-        "explanations.js?v=20260819-2",
-        "app.js?v=20260819-6",
+        "explanations.js?v=20260821-3",
+        "app.js?v=20260821-23",
         "guide-scenarios.js?v=20260819-1",
-        "guide.js?v=20260819-4",
-        "intro.js?v=20260820-1"
+        "guide.js?v=20260821-6",
+        "intro.js?v=20260820-1",
+        "food-flow.js?v=20260821-1"
     ];
     const positions = sources.map(source => html.indexOf(`src="${source}"`));
     positions.forEach(position => assert.ok(position >= 0));
     assert.deepEqual([...positions].sort((a, b) => a - b), positions);
-    assert.match(html, /href="style\.css\?v=20260820-1"/);
+    assert.match(html, /href="style\.css\?v=20260821-16"/);
+});
+
+
+test("Find My Food uses the repository-hosted USDA index without an API key", () => {
+    assert.match(html, /src="data\/usda\/foods-index\.js\?v=20260821-1"/);
+    assert.match(html, /Search our local copy of generic USDA FoodData Central foods/);
+    assert.match(app, /foodExperience\.usdaResults = await searchUsdaFoods\(query\)/);
+    assert.doesNotMatch(app, /DEMO_KEY|BodyFuelConfig|apiKey/);
 });
 
 
@@ -57,7 +68,7 @@ test("the forward-facing contract contains only food, timeline, and hero", () =>
     assert.match(html, /<body class="core-mode">/);
     assert.match(html, /class="workspace core-workspace"[\s\S]*?data-view="core"/);
     assert.match(html, /id="foodBrowserSection"/);
-    assert.match(html, /id="clearFoodsButton"/);
+    assert.match(html, /id="resetFamiliarFoodsButton"/);
     assert.match(html, /id="timelineHeading">Pattern Timeline/);
     assert.match(html, /class="body-stage" id="seeViewRegion"/);
     assert.match(html, /Choose foods\. Watch the pattern respond\. Then explore the timeline\./);
@@ -286,35 +297,34 @@ test("the reusable My Day tray remains preserved backstage", () => {
     assert.match(html, /id="clearDayButton">Clear/);
     assert.match(app, /function changeFoodQuantity\(foodId, delta\)/);
     assert.match(app, /function removeFood\(foodId\)/);
-    assert.match(app, /function clearFoodDay\(\)/);
-    assert.match(app, /lastClearedLines/);
+    assert.match(app, /function resetFamiliarFoods\(\)/);
     assert.match(app, /Decrease \$\{item\.name\}/);
     assert.match(app, /Increase \$\{item\.name\}/);
     assert.match(app, /Remove \$\{item\.name\}/);
 });
 
 
-test("Clear foods is an accessible action outside the category tablist", () => {
+test("Familiar Foods owns its scoped reset without global clear or undo controls", () => {
     const workspaceBar = html.match(/<div class="food-workspace-bar">[\s\S]*?<div class="food-grid"/)[0];
-    assert.match(workspaceBar, /id="clearFoodsButton" aria-label="Clear all selected foods" aria-disabled="true">Clear foods/);
-    assert.match(workspaceBar, /id="undoClearButton" hidden>Undo clear/);
-    assert.doesNotMatch(workspaceBar.match(/<button[^>]+id="clearFoodsButton"[^>]*>/)[0], /role="tab"|aria-selected/);
-    assert.match(app, /foodElements\.clearFoods\.classList\.toggle\("is-inactive", empty\)/);
-    assert.match(app, /foodElements\.clearFoods\.setAttribute\("aria-disabled", String\(empty\)\)/);
-    assert.match(css, /\.clear-foods-action\.is-inactive/);
-    assert.match(css, /\.clear-foods-action,[\s\S]*?min-height: 44px/);
+    assert.match(workspaceBar, /id="familiarFoodsPanel"[\s\S]*?id="resetFamiliarFoodsButton" disabled>Reset Familiar Foods/);
+    assert.doesNotMatch(html, /id="clearFoodsButton"|id="undoClearButton"|id="selectedFoodCount"/);
+    assert.match(app, /foodElements\.resetFamiliarFoods\.addEventListener\("click", resetFamiliarFoods\)/);
+    assert.doesNotMatch(app, /function clearFoodDay|lastClearedLines|foodElements\.undoClear/);
 });
 
 
 test("estimated food energy is a neutral live summary driven by food totals", () => {
     const workspaceBar = html.match(/<div class="food-workspace-bar">[\s\S]*?<div class="food-grid"/)[0];
-    assert.match(workspaceBar, /id="selectedFoodCount">0 foods selected/);
-    assert.match(workspaceBar, /Estimated food energy:[\s\S]*?id="estimatedFoodEnergy"[\s\S]*?≈ 0 kcal/);
-    assert.match(workspaceBar, /aria-label="About estimated food energy" data-core-explanation="estimated-energy"/);
+    const heroReadout = html.match(/<aside class="hero-energy-readout"[\s\S]*?<\/aside>/)[0];
+    assert.doesNotMatch(workspaceBar, /selectedFoodCount|foods selected/);
+    assert.match(heroReadout, /ESTIMATED FOOD ENERGY[\s\S]*?id="estimatedFoodEnergy"[\s\S]*?≈ 0 kcal/);
+    assert.match(heroReadout, /aria-label="About estimated food energy" data-core-explanation="estimated-energy"/);
+    assert.match(heroReadout, /id="estimatedEnergyMeterFill"/);
     assert.match(app, /function updateEstimatedFoodEnergy\(\)/);
     assert.match(app, /const estimate = formatEnergyEstimate\(totals\.calories, controls\.time\.value\)/);
     assert.match(app, /foodElements\.estimatedEnergy\.textContent = estimate\.text/);
     assert.match(app, /foodElements\.estimatedEnergy\.setAttribute\([\s\S]*?estimate\.ariaLabel/);
+    assert.match(app, /foodElements\.estimatedEnergyMeterFill\.style\.width/);
     assert.match(app, /function renderTray\(\)[\s\S]*?updateEstimatedFoodEnergy\(\)/);
     assert.match(app, /function updateCoreTimelineControl\(time\)[\s\S]*?updateEstimatedFoodEnergy\(\)/);
     assert.doesNotMatch(workspaceBar, /target|goal|warning|score/i);
@@ -322,7 +332,7 @@ test("estimated food energy is a neutral live summary driven by food totals", ()
 
 
 test("the visible Everyday Movement context comes from the canonical fixed profile", () => {
-    const workspaceBar = html.match(/<div class="food-workspace-bar">[\s\S]*?<div class="food-grid"/)[0];
+    const heroReadout = html.match(/<aside class="hero-energy-readout"[\s\S]*?<\/aside>/)[0];
     const everyday = model.getActivityProfile(1);
     const state = model.calculateBodyState({
         protein: 0,
@@ -332,14 +342,14 @@ test("the visible Everyday Movement context comes from the canonical fixed profi
         time: 0
     });
 
-    assert.match(workspaceBar, /id="modelEnergyContext"/);
+    assert.match(heroReadout, /id="modelEnergyContext"/);
     assert.match(app, /fixedActivityContext = Object\.freeze\(getActivityProfile\(1\)\)/);
     assert.match(app, /Model context: \$\{fixedActivityContext\.label\} ≈ \$\{Math\.round\(fixedActivityContext\.demand\)\.toLocaleString\(\)\} kcal\/day/);
     assert.equal(everyday.label, "Everyday Movement");
     assert.equal(everyday.demand, state.energyDemand);
     assert.equal(state.energyDemand, 2150);
-    assert.doesNotMatch(workspaceBar, /requirement|recommendation|maintenance|measured burn/i);
-    assert.match(css, /@media \(max-width: 520px\)[\s\S]*?estimated-energy-summary \.model-energy-context \{[\s\S]*?display: block/);
+    assert.doesNotMatch(heroReadout, /requirement|recommendation|maintenance|measured burn/i);
+    assert.match(css, /hero-energy-readout \.model-energy-context \{[\s\S]*?display: block/);
     assert.match(css, /food-workspace-actions :is\(\.clear-foods-action, \.undo-clear\) \{[\s\S]*?align-self: center/);
 });
 
@@ -356,16 +366,13 @@ test("hero and timeline comparison copy uses the existing balance classification
 });
 
 
-test("Clear foods preserves timeline, restores true empty hero state, and supports undo", () => {
-    const clearFunction = app.match(/function clearFoodDay\(\) \{[\s\S]*?\n\}/)[0];
-    assert.match(clearFunction, /lastClearedLines = cloneLines\(foodExperience\.lines\)/);
-    assert.match(clearFunction, /foodExperience\.lines = \[\]/);
-    assert.match(clearFunction, /foodExperience\.dayKind = "empty"/);
-    assert.match(clearFunction, /All selected foods cleared\. Undo is available\./);
-    assert.doesNotMatch(clearFunction, /controls\.time|time\.value/);
-    assert.match(app, /foodElements\.clearFoods\.addEventListener\("click", clearFoodDay\)/);
-    assert.match(app, /undoClear\.addEventListener[\s\S]*?Previous food selections restored\.[\s\S]*?foodElements\.clearFoods\.focus\(\)/);
-    assert.match(app, /foodExperience\.lines\.length === 0[\s\S]*?renderEmptyModelState\(\)/);
+test("Reset Familiar Foods removes only sample foods and preserves USDA shelves", () => {
+    const resetFunction = app.match(/function resetFamiliarFoods\(\) \{[\s\S]*?\n\}/)[0];
+    assert.match(resetFunction, /filter\(line => line\.food\?\.source !== "usda"\)/);
+    assert.match(resetFunction, /filter\(line => line\.food\?\.source === "usda"\)/);
+    assert.match(resetFunction, /syncSavedUsdaQuantities\(\)/);
+    assert.match(resetFunction, /My Pantry and My Foods were not changed/);
+    assert.doesNotMatch(resetFunction, /controls\.time|time\.value|savedUsdaFoods\s*=/);
 });
 
 
@@ -381,6 +388,13 @@ test("core explanations are in-place, dismissible, and restore focus", () => {
     assert.match(html, /id="coreExplanationDetails" hidden/);
     assert.match(app, /dialogDetails\.hidden = !explanation\.details\?\.length/);
     assert.match(app, /dialogDetailsList\.replaceChildren\(\)/);
+});
+
+
+test("energy help is a conventional info dot and bypasses the legacy tooltip", () => {
+    assert.match(app, /querySelectorAll\("\.info-button:not\(\.core-info-button\)"\)/);
+    assert.match(app, /function openCoreExplanation\(trigger\)[\s\S]*?hideInfoPopover\(\)[\s\S]*?aria-expanded", "true"/);
+    assert.match(css, /hero-energy-readout \.energy-info-button \{[\s\S]*?flex: 0 0 22px[\s\S]*?width: 22px[\s\S]*?height: 22px[\s\S]*?border-radius: 50%/);
 });
 
 
@@ -441,9 +455,8 @@ test("portrait footer is subordinate and uses only the required safe-area inset"
 test("tile selection stays synchronized through every food mutation", () => {
     assert.match(app, /function syncFoodTileSelections\(\)/);
     assert.match(app, /function refreshFoodExperience[\s\S]*?renderTray\(\);[\s\S]*?syncFoodTileSelections\(\)/);
-    ["addFood", "changeFoodQuantity", "removeFood", "clearFoodDay"]
+    ["addFood", "changeFoodQuantity", "removeFood", "resetFamiliarFoods"]
         .forEach(name => assert.match(app, new RegExp(`function ${name}\\([\\s\\S]*?refreshFoodExperience\\(\\)`)));
-    assert.match(app, /undoClear\.addEventListener[\s\S]*?refreshFoodExperience\(\)/);
 });
 
 
@@ -472,7 +485,7 @@ test("responsive shell presents hero and food first with timeline as the follow-
     assert.match(css, /body\.core-mode \.core-workspace \{[\s\S]*?align-items: stretch !important/);
     assert.match(app, /function placeCoreExperienceInReadingOrder\(\)[\s\S]*?workspace\.insertBefore\(hero, controlsPanel\)/);
     assert.ok(app.indexOf("placeCoreExperienceInReadingOrder();") < app.lastIndexOf("renderFoodBrowser();"));
-    assert.match(html, /id="guideReplayButton"[\s\S]*?Show me how this works/);
+    assert.match(html, /id="guideReplayButton"[\s\S]*?Guided body tour/);
     const controlsMarkup = html.match(/<aside class="panel controls-panel"[\s\S]*?<\/aside>/)[0];
     assert.doesNotMatch(controlsMarkup, /horizon-section|patternTimelineSection/);
     assert.ok(html.indexOf('id="patternTimelineSection"') > html.indexOf('id="foodBrowserSection"'));
@@ -536,7 +549,7 @@ test("major core surfaces have restrained but distinct depth", () => {
     assert.match(refinement, /core-workspace \.body-stage \{[\s\S]*?linear-gradient\(155deg, rgba\(4, 17, 29/);
     assert.match(refinement, /horizon-section \{[\s\S]*?linear-gradient\(150deg, rgba\(10, 35, 54/);
     assert.match(refinement, /food-browser-section \{[\s\S]*?linear-gradient\(150deg, rgba\(12, 40, 57/);
-    assert.match(refinement, /estimated-energy-summary \{[\s\S]*?background: rgba\(14, 43, 57, \.58\)/);
+    assert.match(css, /hero-energy-readout \{[\s\S]*?linear-gradient\(90deg, rgba\(4, 24, 38, 0\.72\)/);
 });
 
 
@@ -591,7 +604,7 @@ test("relative assets support root and GitHub Pages subpath hosting", () => {
         assert.doesNotMatch(reference, /file:\/\//, reference);
     });
     assert.match(html, /src="assets\/body\/body-anatomical-v4-alpha\.png"/);
-    assert.match(html, /src="app\.js\?v=20260819-6"/);
+    assert.match(html, /src="app\.js\?v=20260821-23"/);
 });
 
 
@@ -604,9 +617,114 @@ test("scientific wording remains neutral and non-predictive", () => {
 });
 
 
-test("history remains page-session only and does not persist the food day", () => {
+test("hero macro cards teach estimated grams and energy per gram", () => {
+    assert.match(html, /id="stageProteinTotal"[^>]*>≈ 0 g<\/span>/);
+    assert.match(html, /id="stageCarbsTotal"[^>]*>≈ 0 g<\/span>/);
+    assert.match(html, /id="stageFatsTotal"[^>]*>≈ 0 g<\/span>/);
+    assert.equal((html.match(/class="macro-energy-rate">4 kcal\/g/g) || []).length, 2);
+    assert.equal((html.match(/class="macro-energy-rate">9 kcal\/g/g) || []).length, 1);
+    assert.match(app, /total\.textContent = `≈ \$\{rounded\.toLocaleString\(\)\} g`/);
+    assert.match(css, /\.macro-total-tag\s*\{[^}]*position:\s*absolute/s);
+    assert.match(css, /Keep the iPad portrait teaching readouts in separate visual lanes[\s\S]*?hero-energy-readout[\s\S]*?left:\s*clamp\(150px, 22vw, 185px\)/);
+});
+
+
+test("body response cards use qualitative dials without visible percentages", () => {
+    const responseStack = html.match(/<div class="routing-column destination-stack"[\s\S]*?<\/div>\s*<\/div>\s*<div class="stage-message/)[0];
+    assert.equal((responseStack.match(/class="response-dial"/g) || []).length, 7);
+    assert.doesNotMatch(responseStack, />\s*\d+%\s*</);
+    assert.match(app, /function setResponseDial\(element, value, \{ empty = false \} = \{\}\)/);
+    assert.match(app, /`Relative model emphasis: \$\{label\}`/);
+    assert.match(css, /\.response-dial-needle\s*\{[^}]*transform:\s*rotate\(var\(--dial-angle/s);
+});
+
+
+test("the active explorer stays in page history while My Foods persist on this device", () => {
     assert.match(app, /history\.replaceState/);
     assert.match(app, /foodLines: cloneLines/);
-    assert.match(app, /version: 6/);
-    assert.doesNotMatch(app, /localStorage\.setItem\([^)]*(?:food|day|tray)/i);
+    assert.match(app, /version: 7/);
+    assert.match(app, /myFoodsStorageKey = "bodyFuelExplorerMyFoodsV1"/);
+    assert.match(app, /localStorage\.setItem\(myFoodsStorageKey/);
+    assert.match(app, /localStorage\.getItem\(myFoodsStorageKey\)/);
+});
+
+
+test("USDA foods move between Find, Pantry, and active My Foods without duplication", () => {
+    assert.match(html, /data-food-source-tab="pantry">My Pantry/);
+    assert.match(html, /data-food-source-tab="saved">My Foods/);
+    assert.match(html, /id="myFoodsTabCount"[^>]*>0<\/span>/);
+    assert.match(html, /id="myPantryPanel" role="tabpanel" aria-labelledby="myPantryTab" hidden/);
+    assert.match(html, /id="myFoodsPanel" role="tabpanel" aria-labelledby="myFoodsTab" hidden/);
+    assert.match(html, /id="myPantryHeading">My Pantry/);
+    assert.match(html, /id="myFoodsHeading">My Foods/);
+    assert.match(html, /id="undoSavedFoodButton"[^>]*>Undo remove/);
+    assert.match(app, /savedUsdaFoods: \[\]/);
+    assert.match(app, /function addFoodToPantry\(item\)/);
+    assert.match(app, /function activatePantryFood\(foodId\)/);
+    assert.match(app, /function returnFoodToPantry\(foodId\)/);
+    assert.match(app, /function removeSavedUsdaFood\(foodId\)/);
+    assert.match(app, /remove\.setAttribute\("aria-label", `Remove \$\{item\.name\} from My Pantry`\)/);
+    assert.match(app, /foodExperience\.savedUsdaFoods\.splice\(removed\.index, 0, removed\.entry\)/);
+    assert.match(app, /function savedFoodMacroGroup\(item\)/);
+    assert.match(app, /\["protein", "Protein-forward"\]/);
+    assert.match(css, /\.my-foods-group-grid\s*\{[^}]*repeat\(auto-fit, minmax/s);
+    assert.match(css, /\.my-foods-list\s*\{[^}]*overflow-y:\s*auto/s);
+    assert.match(app, /restoreMyFoods\(\);[\s\S]*?restoreExplorerSnapshot\(\);[\s\S]*?syncSavedUsdaQuantities\(\);[\s\S]*?renderFoodBrowser\(\);[\s\S]*?renderMyFoods\(\);[\s\S]*?renderUsdaResults\(\);/);
+});
+
+
+test("My Foods can return every active USDA food to the color-coded Pantry", () => {
+    assert.match(html, /id="sendAllToPantryButton"[^>]*>Send all to Pantry/);
+    assert.match(app, /function sendAllFoodsToPantry\(\)/);
+    assert.match(app, /activeEntries\.forEach\(entry =>/);
+    assert.match(app, /entry\.lastQuantity = Math\.max\(1,/);
+    assert.match(app, /foodExperience\.lines = foodExperience\.lines\.filter\(line => !activeIds\.has\(line\.foodId\)\)/);
+    assert.match(app, /foodElements\.sendAllToPantry\.addEventListener\("click", sendAllFoodsToPantry\)/);
+    assert.match(css, /my-foods-group\[data-macro-group="protein"\][^}]*--group-accent/);
+    assert.match(css, /my-foods-group\[data-macro-group="carbs"\][^}]*--group-accent/);
+    assert.match(css, /my-foods-group\[data-macro-group="fats"\][^}]*--group-accent/);
+    assert.match(css, /my-foods-group h4 > small/);
+    assert.match(css, /\.my-foods-list\s*\{[^}]*align-content:\s*start[^}]*grid-auto-rows:\s*max-content/s);
+});
+
+
+test("USDA discovery saves to Pantry while shelf cards retain portion steppers", () => {
+    assert.match(app, /save\.textContent = savedEntry/);
+    assert.match(app, /save\.textContent = savedEntry \? "In My Pantry" : "Add to Pantry"/);
+    assert.doesNotMatch(app, /save\.textContent[\s\S]{0,160}"In My Foods"/);
+    assert.match(app, /: "Add to Pantry"/);
+    assert.match(app, /function reconcileSavedUsdaLocations\(\)/);
+    assert.match(app, /function renderMyFoods\(\) \{[\s\S]*?reconcileSavedUsdaLocations\(\)/);
+    assert.match(app, /myFoodsTabCount\.textContent = activeEntries\.length\.toLocaleString\(\)/);
+    assert.match(app, /My Foods, \$\{activeEntries\.length\} active/);
+    assert.match(app, /decrease\.className = "catalog-portion-decrease"/);
+    assert.match(app, /quantity\.className = "catalog-portion-count"/);
+    assert.match(app, /increase\.className = "catalog-portion-increase"/);
+    assert.match(css, /\.usda-results\s*\{[^}]*overflow-y:\s*auto/s);
+    assert.match(css, /\.usda-results\s*\{[^}]*-webkit-overflow-scrolling:\s*touch/s);
+    assert.match(css, /\.my-foods-shelf\s*\{[^}]*overflow:\s*hidden/s);
+    assert.match(css, /\.my-foods-list\s*\{[^}]*flex:\s*1 1 auto[^}]*overflow-y:\s*auto/s);
+});
+
+test("generic USDA 100 gram references gain a familiar ounce equivalent without changing real measures", () => {
+    assert.match(app, /function displayFoodPortion\(item\)/);
+    assert.match(app, /≈ 3½ oz · USDA 100 g/);
+    assert.match(app, /\^100 g reference portion\$\/i/);
+    assert.match(app, /portion\.textContent = displayFoodPortion\(item\)/);
+});
+
+test("saved-food cards protect names and portions from compact controls", () => {
+    assert.match(css, /\.my-foods-group-grid\s*\{[^}]*minmax\(min\(100%, 250px\)[^}]*container-type:\s*inline-size/s);
+    assert.match(css, /@container \(max-width: 620px\)[\s\S]*?\.my-foods-group \.usda-result-card\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\)/s);
+    assert.match(css, /@container \(max-width: 620px\)[\s\S]*?\.my-foods-group \.usda-card-actions\s*\{[^}]*justify-self:\s*end/s);
+});
+
+test("local USDA search responds while typing and offers an explicit clear control", () => {
+    assert.match(html, /id="usdaSearchClear"[^>]*aria-label="Clear food search"/);
+    assert.match(app, /usdaInput\.addEventListener\("input", queueUsdaSearch\)/);
+    assert.match(css, /input\[type="search"\]::\-webkit-search-cancel-button[\s\S]*?display:\s*none/);
+    assert.match(app, /setTimeout\(\(\) => runUsdaSearch\(query\), 250\)/);
+    assert.match(app, /usdaClear\.addEventListener\("click", clearUsdaSearch\)/);
+    assert.match(css, /\.usda-search-clear\s*\{/);
+    assert.match(css, /button\[type="submit"\][^{]*\{[^}]*background:\s*rgba\(39, 91, 113, 0\.34\)/s);
 });

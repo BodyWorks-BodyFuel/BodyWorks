@@ -120,3 +120,37 @@ test("near-zero tea stays in the tray while contributing no invented physiology"
         calories: 0
     });
 });
+
+
+test("USDA and familiar foods aggregate through the same line-item contract", () => {
+    const result = foods.aggregateFoods([
+        { foodId: "eggs", quantity: 1 },
+        {
+            foodId: "usda-123",
+            quantity: 2,
+            food: {
+                source: "usda",
+                estimate: { protein: 1.3, carbs: 26.9, fats: 0.4 }
+            }
+        }
+    ]);
+
+    assert.deepEqual(result, {
+        protein: 14.6,
+        carbs: 54.8,
+        fats: 10.8,
+        calories: 375
+    });
+
+    const clone = foods.cloneLines([{
+        foodId: "usda-123",
+        quantity: 1,
+        food: { source: "usda", estimate: { protein: 1, carbs: 2, fats: 3 } }
+    }]);
+    clone[0].food.estimate.carbs = 99;
+    assert.equal(foods.cloneLines([{
+        foodId: "usda-123",
+        quantity: 1,
+        food: { source: "usda", estimate: { protein: 1, carbs: 2, fats: 3 } }
+    }])[0].food.estimate.carbs, 2);
+});

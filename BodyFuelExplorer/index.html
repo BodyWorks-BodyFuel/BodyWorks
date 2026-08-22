@@ -12,7 +12,7 @@
     <meta name="copyright" content="Copyright © 2026 Anthony Adams. All rights reserved.">
     <title>Body Fuel Flow Explorer</title>
     <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="style.css?v=20260820-1">
+    <link rel="stylesheet" href="style.css?v=20260821-16">
 </head>
 
 <body class="core-mode">
@@ -35,12 +35,18 @@
         </div>
 
         <div class="topbar-actions">
-            <button type="button" class="intro-reopen" id="introReopenButton">
-                Understanding the Explorer
-            </button>
-            <button type="button" class="guide-replay" id="guideReplayButton">
-                Show me how this works
-            </button>
+            <nav class="learning-queue" aria-label="Learning center">
+                <span class="learning-queue-label">Learn</span>
+                <button type="button" class="intro-reopen learning-link" id="introReopenButton">
+                    Explorer basics
+                </button>
+                <button type="button" class="food-flow-reopen learning-link" id="foodFlowReopenButton">
+                    My Food flow
+                </button>
+                <button type="button" class="guide-replay learning-show-me" id="guideReplayButton">
+                    Guided body tour
+                </button>
+            </nav>
         </div>
 
     </header>
@@ -100,22 +106,61 @@
                 </div>
                 <p class="food-browser-intro">Broad, familiar examples for exploring the model—never grades or prescriptions.</p>
                 <div class="food-workspace-bar">
-                    <div class="food-workspace-actions">
-                        <div class="estimated-energy-summary">
-                            <span id="selectedFoodCount">0 foods selected</span>
-                            <strong>
-                                Estimated food energy:
-                                <output id="estimatedFoodEnergy" aria-live="polite" aria-atomic="true" aria-label="Estimated food energy approximately 0 kilocalories">≈ 0 kcal</output>
-                            </strong>
-                            <span class="model-energy-context" id="modelEnergyContext"></span>
-                            <button type="button" class="info-button core-info-button energy-info-button" aria-label="About estimated food energy" data-core-explanation="estimated-energy">i</button>
-                        </div>
-                        <button type="button" class="clear-foods-action is-inactive" id="clearFoodsButton" aria-label="Clear all selected foods" aria-disabled="true">Clear foods</button>
-                        <button type="button" class="undo-clear" id="undoClearButton" hidden>Undo clear</button>
+                    <div class="food-source-tabs" role="tablist" aria-label="Ways to find foods">
+                        <button type="button" class="food-source-tab is-active" id="familiarFoodsTab" role="tab" aria-selected="true" aria-controls="familiarFoodsPanel" data-food-source-tab="familiar">Familiar Foods</button>
+                        <button type="button" class="food-source-tab" id="findMyFoodTab" role="tab" aria-selected="false" aria-controls="usdaFoodsPanel" data-food-source-tab="usda">Find My Food</button>
+                        <button type="button" class="food-source-tab" id="myPantryTab" role="tab" aria-selected="false" aria-controls="myPantryPanel" data-food-source-tab="pantry">My Pantry <span class="tab-count" id="myPantryTabCount" aria-hidden="true">0</span></button>
+                        <button type="button" class="food-source-tab" id="myFoodsTab" role="tab" aria-selected="false" aria-controls="myFoodsPanel" data-food-source-tab="saved">My Foods <span class="tab-count" id="myFoodsTabCount" aria-hidden="true">0</span></button>
                     </div>
-                    <div class="food-filters" id="foodFilters" role="tablist" aria-label="Food categories"></div>
                 </div>
-                <div class="food-grid" id="foodGrid" aria-label="Food choices"></div>
+                <div class="food-source-panel" id="familiarFoodsPanel" role="tabpanel" aria-labelledby="familiarFoodsTab">
+                    <div class="familiar-food-toolbar">
+                        <div class="food-filters" id="foodFilters" role="tablist" aria-label="Food categories"></div>
+                        <button type="button" class="reset-familiar-foods" id="resetFamiliarFoodsButton" disabled>Reset Familiar Foods</button>
+                    </div>
+                    <div class="food-grid" id="foodGrid" aria-label="Familiar food choices"></div>
+                </div>
+                <div class="food-source-panel usda-food-panel" id="usdaFoodsPanel" role="tabpanel" aria-labelledby="findMyFoodTab" hidden>
+                    <form class="usda-search-form" id="usdaSearchForm" role="search">
+                        <label for="usdaSearchInput">Search for a food</label>
+                        <div class="usda-search-row">
+                            <div class="usda-search-input-wrap">
+                                <input id="usdaSearchInput" name="food-search" type="search" minlength="2" autocomplete="off" placeholder="Try banana, chili, or salmon">
+                                <button type="button" class="usda-search-clear" id="usdaSearchClear" aria-label="Clear food search" hidden>×</button>
+                            </div>
+                            <button type="submit">Search</button>
+                        </div>
+                        <p>Search our local copy of generic USDA FoodData Central foods. Choose the closest familiar match and portion.</p>
+                    </form>
+                    <div class="usda-search-state" id="usdaSearchState" role="status" aria-live="polite">Search for a food to bring into My Pantry.</div>
+                    <div class="usda-results" id="usdaResults" aria-label="USDA food search results"></div>
+                </div>
+                <div class="food-source-panel my-foods-panel" id="myPantryPanel" role="tabpanel" aria-labelledby="myPantryTab" hidden>
+                    <section class="my-foods-shelf" aria-labelledby="myPantryHeading">
+                        <div class="my-foods-heading">
+                            <div>
+                                <h3 id="myPantryHeading">My Pantry</h3>
+                                <span>Saved on this device and ready whenever you want to use them.</span>
+                            </div>
+                            <button type="button" class="undo-saved-food" id="undoSavedFoodButton" hidden>Undo remove</button>
+                        </div>
+                        <p class="my-foods-empty" id="myPantryEmpty">Foods you bring home from search will wait here.</p>
+                        <div class="my-foods-list" id="myPantryList" aria-label="Foods saved in My Pantry"></div>
+                    </section>
+                </div>
+                <div class="food-source-panel my-foods-panel" id="myFoodsPanel" role="tabpanel" aria-labelledby="myFoodsTab" hidden>
+                    <section class="my-foods-shelf" aria-labelledby="myFoodsHeading">
+                        <div class="my-foods-heading">
+                            <div>
+                                <h3 id="myFoodsHeading">My Foods</h3>
+                                <span>Currently shaping the hero. Switch a food off to return it to My Pantry.</span>
+                            </div>
+                            <button type="button" class="send-all-to-pantry" id="sendAllToPantryButton" disabled>Send all to Pantry</button>
+                        </div>
+                        <p class="my-foods-empty" id="myFoodsEmpty">Choose something from My Pantry to bring the hero to life.</p>
+                        <div class="my-foods-list" id="myFoodsList" aria-label="Foods currently shaping the hero"></div>
+                    </section>
+                </div>
                 <p class="food-browser-status" id="foodBrowserStatus" role="status" aria-live="polite"></p>
 
                 <section class="today-section core-my-day legacy-backstage" id="coreMyDay" aria-labelledby="todayFoodsHeading" hidden inert aria-hidden="true">
@@ -255,6 +300,19 @@
             </div>
 
             <div class="routing-stage" data-balance-state="matched">
+
+                <aside class="hero-energy-readout" aria-label="Estimated food energy compared with the model reference">
+                    <div class="hero-energy-heading">
+                        <span>ESTIMATED FOOD ENERGY</span>
+                        <button type="button" class="info-button core-info-button energy-info-button" aria-label="About estimated food energy" data-core-explanation="estimated-energy">i</button>
+                    </div>
+                    <output id="estimatedFoodEnergy" aria-live="polite" aria-atomic="true" aria-label="Estimated food energy approximately 0 kilocalories">≈ 0 kcal</output>
+                    <span class="hero-energy-meter" aria-hidden="true">
+                        <span class="hero-energy-fill" id="estimatedEnergyMeterFill"></span>
+                        <span class="hero-energy-reference"></span>
+                    </span>
+                    <span class="model-energy-context" id="modelEnergyContext"></span>
+                </aside>
 
                 <svg
                     class="routing-network"
@@ -454,25 +512,31 @@
                     <p class="routing-kicker" id="routingInputsLabel">Inputs</p>
 
                     <article class="route-card route-protein" tabindex="0" role="button" aria-haspopup="dialog" data-core-explanation="protein">
+                        <span class="macro-total-tag" id="stageProteinTotal" aria-label="Estimated protein total 0 grams">≈ 0 g</span>
                         <div>
                             <strong>Protein</strong>
                             <small id="stageProteinValue">Present in today’s mix</small>
+                            <span class="macro-energy-rate">4 kcal/g</span>
                         </div>
                         <img class="route-visual" src="assets/icons/biology/input-protein.png" width="512" height="512" alt="" draggable="false">
                     </article>
 
                     <article class="route-card route-carbs" tabindex="0" role="button" aria-haspopup="dialog" data-core-explanation="carbohydrates">
+                        <span class="macro-total-tag" id="stageCarbsTotal" aria-label="Estimated carbohydrate total 0 grams">≈ 0 g</span>
                         <div>
                             <strong>Carbohydrates</strong>
                             <small id="stageCarbsValue">Present in today’s mix</small>
+                            <span class="macro-energy-rate">4 kcal/g</span>
                         </div>
                         <img class="route-visual" src="assets/icons/biology/input-carbohydrates.png" width="512" height="512" alt="" draggable="false">
                     </article>
 
                     <article class="route-card route-fat" tabindex="0" role="button" aria-haspopup="dialog" data-core-explanation="fats">
+                        <span class="macro-total-tag" id="stageFatsTotal" aria-label="Estimated fat total 0 grams">≈ 0 g</span>
                         <div>
                             <strong>Fats</strong>
                             <small id="stageFatsValue">Present in today’s mix</small>
+                            <span class="macro-energy-rate">9 kcal/g</span>
                         </div>
                         <img class="route-visual" src="assets/icons/biology/input-fats.png" width="512" height="512" alt="" draggable="false">
                     </article>
@@ -512,7 +576,7 @@
                             <strong>Brain &amp; Essential Fuel</strong>
                             <small>Continuous essential needs</small>
                         </div>
-                        <b id="destinationFuelValue">63%</b>
+                        <span class="response-dial" id="destinationFuelValue" role="img" aria-label="Relative emphasis not yet modeled"><span class="response-dial-needle" aria-hidden="true"></span></span>
                     </article>
 
                     <article class="destination-card destination-liver" tabindex="0" role="button" aria-haspopup="dialog" data-core-explanation="liver">
@@ -521,7 +585,7 @@
                             <strong>Liver Processing</strong>
                             <small>Convert · store · release</small>
                         </div>
-                        <b id="destinationLiverValue">—</b>
+                        <span class="response-dial" id="destinationLiverValue" role="img" aria-label="Relative emphasis not yet modeled"><span class="response-dial-needle" aria-hidden="true"></span></span>
                     </article>
 
                     <article class="destination-card destination-muscle" tabindex="0" role="button" aria-haspopup="dialog" data-core-explanation="muscle">
@@ -530,7 +594,7 @@
                             <strong>Working Muscles</strong>
                             <small>Movement-related demand</small>
                         </div>
-                        <b id="destinationMuscleValue">45%</b>
+                        <span class="response-dial" id="destinationMuscleValue" role="img" aria-label="Relative emphasis not yet modeled"><span class="response-dial-needle" aria-hidden="true"></span></span>
                     </article>
 
                     <article class="destination-card destination-repair" tabindex="0" role="button" aria-haspopup="dialog" data-core-explanation="repair">
@@ -539,7 +603,7 @@
                             <strong>Repair &amp; Rebuilding</strong>
                             <small>Tissue maintenance</small>
                         </div>
-                        <b id="destinationRepairValue">55%</b>
+                        <span class="response-dial" id="destinationRepairValue" role="img" aria-label="Relative emphasis not yet modeled"><span class="response-dial-needle" aria-hidden="true"></span></span>
                     </article>
 
                     <article class="destination-card destination-glycogen" tabindex="0" role="button" aria-haspopup="dialog" data-core-explanation="glycogen">
@@ -548,7 +612,7 @@
                             <strong>Glycogen Storage</strong>
                             <small>Muscle and liver stores</small>
                         </div>
-                        <b id="destinationGlycogenValue">48%</b>
+                        <span class="response-dial" id="destinationGlycogenValue" role="img" aria-label="Relative emphasis not yet modeled"><span class="response-dial-needle" aria-hidden="true"></span></span>
                     </article>
 
                     <article class="destination-card destination-storage" tabindex="0" role="button" aria-haspopup="dialog" data-core-explanation="fat-storage">
@@ -557,7 +621,7 @@
                             <strong>Fat Storage</strong>
                             <small>Longer-term reserve</small>
                         </div>
-                        <b id="destinationStorageValue">29%</b>
+                        <span class="response-dial" id="destinationStorageValue" role="img" aria-label="Relative emphasis not yet modeled"><span class="response-dial-needle" aria-hidden="true"></span></span>
                     </article>
 
                     <article class="destination-card destination-fat-use" tabindex="0" role="button" aria-haspopup="dialog" data-core-explanation="fat-as-fuel">
@@ -566,7 +630,7 @@
                             <strong>Fat as Fuel</strong>
                             <small>Dietary + reserve contribution</small>
                         </div>
-                        <b id="destinationFatUseValue">51%</b>
+                        <span class="response-dial" id="destinationFatUseValue" role="img" aria-label="Relative emphasis not yet modeled"><span class="response-dial-needle" aria-hidden="true"></span></span>
                     </article>
                 </div>
             </div>
@@ -859,6 +923,55 @@
     </div>
 </dialog>
 
+<dialog class="explorer-intro food-flow-intro" id="foodFlowIntro" aria-labelledby="foodFlowIntroTitle" aria-describedby="foodFlowIntroLead">
+    <div class="explorer-intro-panel">
+        <span class="explorer-intro-kicker">Your foods, from shelf to body</span>
+        <h2 id="foodFlowIntroTitle">How My Foods Works</h2>
+        <p class="explorer-intro-lead" id="foodFlowIntroLead">
+            Find it, save it, choose it—and see when it begins shaping the hero.
+        </p>
+
+        <div class="food-flow-path" aria-label="Find My Food, then My Pantry, then My Foods, then the hero responds">
+            <span>Find My Food</span><b aria-hidden="true">→</b>
+            <span>My Pantry</span><b aria-hidden="true">→</b>
+            <span>My Foods</span><b aria-hidden="true">→</b>
+            <span>Hero responds</span>
+        </div>
+
+        <div class="explorer-intro-sections food-flow-sections">
+            <section class="explorer-intro-card explorer-intro-card-primary" aria-labelledby="foodFlowFindTitle">
+                <span class="explorer-intro-number" aria-hidden="true">01 · Find</span>
+                <h3 id="foodFlowFindTitle">Choose a familiar match</h3>
+                <p>Search the local USDA collection and choose the description and portion that most closely resemble your food.</p>
+            </section>
+            <section class="explorer-intro-card" aria-labelledby="foodFlowPantryTitle">
+                <span class="explorer-intro-number" aria-hidden="true">02 · Save</span>
+                <h3 id="foodFlowPantryTitle">Put it in My Pantry</h3>
+                <p>Pantry foods remain saved on this device. They wait on your shelf and remember the portion you normally explore.</p>
+            </section>
+            <section class="explorer-intro-card" aria-labelledby="foodFlowUseTitle">
+                <span class="explorer-intro-number" aria-hidden="true">03 · Use</span>
+                <h3 id="foodFlowUseTitle">Move it into My Foods</h3>
+                <p>My Foods is today’s active pattern. Only foods placed there contribute to the visible energy, macro totals, and routing model.</p>
+            </section>
+            <section class="explorer-intro-card" aria-labelledby="foodFlowReturnTitle">
+                <span class="explorer-intro-number" aria-hidden="true">04 · Adjust</span>
+                <h3 id="foodFlowReturnTitle">Change it without losing it</h3>
+                <p>Adjust portions, or return a food to My Pantry. It stops shaping the hero but remains ready for another experiment.</p>
+            </section>
+        </div>
+
+        <div class="explorer-intro-closeout food-flow-closeout">
+            <p><strong>The simple rule:</strong> Pantry means saved. My Foods means active.</p>
+            <div class="food-flow-intro-actions">
+                <button type="button" class="food-flow-return" id="foodFlowReturnButton">Return to Explorer</button>
+                <button type="button" class="explorer-intro-enter" id="foodFlowStartButton">Show me the food flow</button>
+            </div>
+        </div>
+        <p class="explorer-intro-caveat">The guided example is temporary. Your Pantry and active foods are restored when it ends.</p>
+    </div>
+</dialog>
+
 <aside class="guide-invitation" id="guideInvitation" role="region" aria-labelledby="guideInvitationTitle" hidden>
     <p id="guideInvitationTitle">Want a 90-second guided example?</p>
     <div class="guide-invitation-actions">
@@ -885,6 +998,25 @@
 </section>
 
 <div class="guide-announcer" id="guideAnnouncer" role="status" aria-live="polite" aria-atomic="true"></div>
+
+<div class="guide-dimmer" id="foodFlowGuideDimmer" aria-hidden="true" hidden></div>
+
+<section class="guide-coach food-flow-guide-coach" id="foodFlowGuideCoach" role="dialog" aria-modal="false" aria-labelledby="foodFlowGuideTitle" aria-describedby="foodFlowGuideBody" hidden>
+    <div class="guide-coach-head">
+        <span class="guide-progress" id="foodFlowGuideProgress">1 of 7</span>
+        <button type="button" class="guide-exit" id="foodFlowGuideExit" aria-label="Exit food-flow guide and restore prior foods">Exit</button>
+    </div>
+    <h2 id="foodFlowGuideTitle">How your food shelf works</h2>
+    <div class="guide-copy" id="foodFlowGuideBody"></div>
+    <p class="guide-action-status" id="foodFlowGuideStatus" role="status" aria-live="polite"></p>
+    <div class="guide-primary-actions" id="foodFlowGuideActions"></div>
+    <div class="guide-navigation">
+        <button type="button" class="guide-back" id="foodFlowGuideBack">Back</button>
+        <button type="button" class="guide-next" id="foodFlowGuideNext">Next</button>
+    </div>
+</section>
+
+<div class="guide-announcer" id="foodFlowGuideAnnouncer" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <div class="info-popover" id="infoPopover" role="tooltip" aria-hidden="true">
     <strong id="infoPopoverTitle"></strong>
@@ -958,12 +1090,16 @@
 
 <script src="model.js?v=20260819-1"></script>
 <script src="foods.js?v=20260818-2"></script>
+<script src="fuel-input.js?v=20260821-1"></script>
+<script src="data/usda/foods-index.js?v=20260821-1"></script>
+<script src="usda.js?v=20260821-2"></script>
 <script src="narration.js?v=20260819-2"></script>
-<script src="explanations.js?v=20260819-2"></script>
-<script src="app.js?v=20260819-6"></script>
+<script src="explanations.js?v=20260821-3"></script>
+<script src="app.js?v=20260821-23"></script>
 <script src="guide-scenarios.js?v=20260819-1"></script>
-<script src="guide.js?v=20260819-4"></script>
+<script src="guide.js?v=20260821-6"></script>
 <script src="intro.js?v=20260820-1"></script>
+<script src="food-flow.js?v=20260821-1"></script>
 
 </body>
 </html>

@@ -41,6 +41,15 @@ const {
 } = window.BodyFuelFoods;
 
 const {
+    createFuelInput,
+    toModelInput
+} = window.BodyFuelInput;
+
+const {
+    searchFoods: searchUsdaFoods
+} = window.BodyFuelUsda;
+
+const {
     buildNarration,
     suggestExperiment
 } = window.BodyFuelNarration;
@@ -77,17 +86,21 @@ const planner = {
 };
 
 const explorerHistoryKey = "bodyFuelExplorer";
+const myFoodsStorageKey = "bodyFuelExplorerMyFoodsV1";
 const emphasisDurationMs = 3000;
 const fixedActivityContext = Object.freeze(getActivityProfile(1));
 
 const foodExperience = {
     lines: [],
     filter: "breakfast",
+    browserSource: "familiar",
+    usdaResults: [],
+    savedUsdaFoods: [],
+    lastRemovedSavedFood: null,
     source: "foods",
     dayKind: "empty",
     viewMode: "core",
     lastChange: { type: "empty" },
-    lastClearedLines: null,
     experimentUndo: null,
     experiment: null,
     currentState: null,
@@ -106,10 +119,9 @@ const foodElements = {
     loadExample: document.getElementById("loadExampleDay"),
     clearStart: document.getElementById("clearStartButton"),
     clearDay: document.getElementById("clearDayButton"),
-    clearFoods: document.getElementById("clearFoodsButton"),
-    undoClear: document.getElementById("undoClearButton"),
-    selectedFoodCount: document.getElementById("selectedFoodCount"),
+    resetFamiliarFoods: document.getElementById("resetFamiliarFoodsButton"),
     estimatedEnergy: document.getElementById("estimatedFoodEnergy"),
+    estimatedEnergyMeterFill: document.getElementById("estimatedEnergyMeterFill"),
     modelEnergyContext: document.getElementById("modelEnergyContext"),
     mobileSummary: document.getElementById("mobileDaySummary"),
     mobileCount: document.getElementById("mobileDayCount"),
@@ -134,6 +146,27 @@ const foodElements = {
     seeActivitySummary: document.getElementById("seeActivitySummary"),
     seeHorizonSummary: document.getElementById("seeHorizonSummary")
 };
+
+Object.assign(foodElements, {
+    sourceTabs: [...document.querySelectorAll("[data-food-source-tab]")],
+    familiarPanel: document.getElementById("familiarFoodsPanel"),
+    usdaPanel: document.getElementById("usdaFoodsPanel"),
+    myPantryPanel: document.getElementById("myPantryPanel"),
+    myPantryTabCount: document.getElementById("myPantryTabCount"),
+    myFoodsPanel: document.getElementById("myFoodsPanel"),
+    myFoodsTabCount: document.getElementById("myFoodsTabCount"),
+    usdaForm: document.getElementById("usdaSearchForm"),
+    usdaInput: document.getElementById("usdaSearchInput"),
+    usdaClear: document.getElementById("usdaSearchClear"),
+    usdaState: document.getElementById("usdaSearchState"),
+    usdaResults: document.getElementById("usdaResults"),
+    myPantryList: document.getElementById("myPantryList"),
+    myPantryEmpty: document.getElementById("myPantryEmpty"),
+    myFoodsList: document.getElementById("myFoodsList"),
+    myFoodsEmpty: document.getElementById("myFoodsEmpty"),
+    sendAllToPantry: document.getElementById("sendAllToPantryButton"),
+    undoSavedFood: document.getElementById("undoSavedFoodButton")
+});
 
 
 function placeCoreExperienceInReadingOrder() {
@@ -183,8 +216,9 @@ function createExplorerSnapshot() {
         document.querySelector(".preset.active")?.dataset.preset || null;
 
     return {
-        version: 6,
+        version: 7,
         foodLines: cloneLines(foodExperience.lines),
+        foodBrowserSource: foodExperience.browserSource,
         foodSource: foodExperience.source,
         foodDayKind: foodExperience.dayKind,
         foodFilter: foodExperience.filter,
@@ -253,16 +287,20 @@ function restoreExplorerSnapshot() {
     const snapshot =
         history.state?.[explorerHistoryKey];
 
-    if (!snapshot || snapshot.version !== 6) {
+    if (!snapshot || ![6, 7].includes(snapshot.version)) {
         return null;
     }
 
     if (Array.isArray(snapshot.foodLines)) {
         foodExperience.lines = snapshot.foodLines
-            .filter(line => catalogById[line.foodId] && Number(line.quantity) > 0)
+            .filter(line =>
+                (catalogById[line.foodId] || line.food?.estimate) &&
+                Number(line.quantity) > 0
+            )
             .map(line => ({
                 foodId: line.foodId,
                 quantity: Number(line.quantity),
+                ...(line.food ? { food: line.food } : {}),
                 ...(Array.isArray(line.exampleMeals)
                     ? { exampleMeals: [...line.exampleMeals] }
                     : {})
@@ -272,6 +310,9 @@ function restoreExplorerSnapshot() {
     foodExperience.source = snapshot.foodSource === "manual"
         ? "manual"
         : "foods";
+    foodExperience.browserSource = ["usda", "pantry", "saved"].includes(snapshot.foodBrowserSource)
+        ? snapshot.foodBrowserSource
+        : "familiar";
     foodExperience.dayKind = ["example", "custom", "empty"].includes(snapshot.foodDayKind)
         ? snapshot.foodDayKind
         : "custom";
@@ -418,15 +459,16 @@ function updateCoreTimelineControl(time) {
 function updateEstimatedFoodEnergy() {
     const totals = foodTotals();
     const estimate = formatEnergyEstimate(totals.calories, controls.time.value);
-    const selectedCount = foodExperience.lines.length;
-
-    foodElements.selectedFoodCount.textContent =
-        `${selectedCount} ${selectedCount === 1 ? "food" : "foods"} selected`;
     foodElements.estimatedEnergy.textContent = estimate.text;
     foodElements.estimatedEnergy.setAttribute(
         "aria-label",
         estimate.ariaLabel
     );
+    const energyMeterPercent = Math.min(
+        100,
+        Math.max(0, (totals.calories / (fixedActivityContext.demand * 1.4)) * 100)
+    );
+    foodElements.estimatedEnergyMeterFill.style.width = `${energyMeterPercent}%`;
     foodElements.modelEnergyContext.textContent =
         `Model context: ${fixedActivityContext.label} ≈ ${Math.round(fixedActivityContext.demand).toLocaleString()} kcal/day`;
 }
@@ -718,7 +760,7 @@ function setExperienceView(view, { persist = true } = {}) {
 
 
 function liveChangeMessage() {
-    const item = catalogById[foodExperience.lastChange?.foodId];
+    const item = foodItem(foodExperience.lastChange?.foodId);
     const activity = getActivityProfile(controls.activity.value);
     const horizon = getHorizonPeriod(controls.time.value);
     const type = foodExperience.lastChange?.type;
@@ -774,7 +816,7 @@ function updateLiveBody() {
     const update = liveChangeMessage();
     const bodies = [foodElements.teaserBody, foodElements.dockBody];
     const fullStage = document.querySelector(".body-stage");
-    const changedItem = catalogById[foodExperience.lastChange?.foodId];
+    const changedItem = foodItem(foodExperience.lastChange?.foodId);
     if (changedItem) {
         const weightedInputs = {
             protein: changedItem.estimate.protein * 4,
@@ -831,8 +873,55 @@ function enterAdjustedFromFoods(changeType = "technical") {
 }
 
 
+function foodItem(foodId) {
+    return catalogById[foodId] ||
+        foodExperience.lines.find(line => line.foodId === foodId)?.food ||
+        foodExperience.savedUsdaFoods.find(entry => entry.food.id === foodId)?.food ||
+        foodExperience.usdaResults.find(item => item.id === foodId) ||
+        null;
+}
+
+
 function foodTotals() {
     return aggregateFoods(foodExperience.lines);
+}
+
+
+function selectedFoodSource() {
+    const sources = new Set(foodExperience.lines.map(line =>
+        line.food?.source === "usda" ? "usda" : "familiar"
+    ));
+    if (sources.size > 1) return "mixed";
+    return sources.values().next().value || "familiar";
+}
+
+
+function currentFuelInput() {
+    const fromFoods = foodExperience.source === "foods";
+    const totals = fromFoods
+        ? foodTotals()
+        : {
+            protein: Number(controls.protein.value),
+            carbs: Number(controls.carbs.value),
+            fats: Number(controls.fats.value),
+            calories: calculateMacroCalories({
+                protein: Number(controls.protein.value),
+                carbs: Number(controls.carbs.value),
+                fats: Number(controls.fats.value)
+            })
+        };
+
+    return createFuelInput({
+        source: fromFoods ? selectedFoodSource() : "manual",
+        totals,
+        activity: Number(controls.activity.value),
+        timeline: Number(controls.time.value),
+        items: foodExperience.lines.map(line => ({
+            id: line.foodId,
+            quantity: line.quantity,
+            source: line.food?.source === "usda" ? "usda" : "familiar"
+        }))
+    });
 }
 
 
@@ -975,9 +1064,506 @@ function renderFoodBrowser() {
 }
 
 
+function setFoodBrowserSource(source, { focus = false, persist = true } = {}) {
+    foodExperience.browserSource = ["usda", "pantry", "saved"].includes(source) ? source : "familiar";
+    const showingUsda = foodExperience.browserSource === "usda";
+    const showingPantry = foodExperience.browserSource === "pantry";
+    const showingSaved = foodExperience.browserSource === "saved";
+
+    foodElements.familiarPanel.hidden = showingUsda || showingPantry || showingSaved;
+    foodElements.usdaPanel.hidden = !showingUsda;
+    foodElements.myPantryPanel.hidden = !showingPantry;
+    foodElements.myFoodsPanel.hidden = !showingSaved;
+    foodElements.sourceTabs.forEach(button => {
+        const selected = button.dataset.foodSourceTab === foodExperience.browserSource;
+        button.classList.toggle("is-active", selected);
+        button.setAttribute("aria-selected", String(selected));
+        button.tabIndex = selected ? 0 : -1;
+    });
+
+    if (focus) {
+        const target = showingUsda
+            ? foodElements.usdaInput
+            : showingPantry
+                ? foodElements.myPantryList.querySelector("button") || foodElements.sourceTabs.find(button => button.dataset.foodSourceTab === "pantry")
+            : showingSaved
+                ? foodElements.myFoodsList.querySelector("button") || foodElements.sourceTabs.find(button => button.dataset.foodSourceTab === "saved")
+                : foodElements.filters.querySelector("button");
+        target?.focus();
+    }
+    if (persist) persistExplorerSnapshot();
+}
+
+
+function savedUsdaEntry(foodId) {
+    return foodExperience.savedUsdaFoods.find(entry => entry.food.id === foodId) || null;
+}
+
+
+function safeSavedUsdaEntry(entry) {
+    const food = entry?.food;
+    const estimate = food?.estimate;
+    if (
+        !food || food.source !== "usda" || !String(food.id || "").startsWith("usda-") ||
+        !estimate || ![estimate.protein, estimate.carbs, estimate.fats].every(Number.isFinite)
+    ) return null;
+
+    const quantity = Math.max(0, Number(entry.quantity) || 0);
+    const lastQuantity = Math.max(0.5, Number(entry.lastQuantity) || quantity || 1);
+    return {
+        food: {
+            ...food,
+            estimate: { ...estimate }
+        },
+        quantity,
+        lastQuantity
+    };
+}
+
+
+function persistMyFoods() {
+    try {
+        localStorage.setItem(myFoodsStorageKey, JSON.stringify({
+            version: 1,
+            foods: foodExperience.savedUsdaFoods
+        }));
+    } catch (error) {
+        // The shelf remains usable for this page when storage is unavailable.
+    }
+}
+
+
+function restoreMyFoods() {
+    try {
+        const payload = JSON.parse(localStorage.getItem(myFoodsStorageKey) || "null");
+        if (payload?.version !== 1 || !Array.isArray(payload.foods)) return;
+
+        foodExperience.savedUsdaFoods = payload.foods
+            .map(safeSavedUsdaEntry)
+            .filter(Boolean);
+
+        foodExperience.savedUsdaFoods.forEach(entry => {
+            if (entry.quantity <= 0) return;
+            foodExperience.lines.push({
+                foodId: entry.food.id,
+                quantity: entry.quantity,
+                food: {
+                    ...entry.food,
+                    estimate: { ...entry.food.estimate }
+                }
+            });
+        });
+    } catch (error) {
+        foodExperience.savedUsdaFoods = [];
+    }
+}
+
+
+function saveUsdaFood(item, quantity = 1) {
+    let entry = savedUsdaEntry(item.id);
+    if (!entry) {
+        entry = safeSavedUsdaEntry({ food: item, quantity, lastQuantity: quantity });
+        if (!entry) return null;
+        foodExperience.savedUsdaFoods.unshift(entry);
+    } else if (quantity > 0) {
+        entry.quantity = quantity;
+        entry.lastQuantity = quantity;
+    }
+    persistMyFoods();
+    return entry;
+}
+
+
+function syncSavedUsdaQuantities() {
+    foodExperience.savedUsdaFoods.forEach(entry => {
+        const line = foodExperience.lines.find(item => item.foodId === entry.food.id);
+        entry.quantity = Math.max(0, Number(line?.quantity) || 0);
+        if (entry.quantity > 0) entry.lastQuantity = entry.quantity;
+    });
+    persistMyFoods();
+}
+
+
+function reconcileSavedUsdaLocations() {
+    let changed = false;
+    foodExperience.savedUsdaFoods.forEach(entry => {
+        const line = foodExperience.lines.find(item => item.foodId === entry.food.id);
+        const activeQuantity = Math.max(0, Number(line?.quantity) || 0);
+        if (entry.quantity !== activeQuantity) {
+            entry.quantity = activeQuantity;
+            changed = true;
+        }
+        if (activeQuantity > 0 && entry.lastQuantity !== activeQuantity) {
+            entry.lastQuantity = activeQuantity;
+            changed = true;
+        }
+    });
+    if (changed) persistMyFoods();
+}
+
+
+function renderMyFoods() {
+    reconcileSavedUsdaLocations();
+    const pantryEntries = foodExperience.savedUsdaFoods.filter(entry => entry.quantity <= 0);
+    const activeEntries = foodExperience.savedUsdaFoods.filter(entry => entry.quantity > 0);
+    foodElements.myPantryEmpty.hidden = pantryEntries.length > 0;
+    foodElements.myFoodsEmpty.hidden = activeEntries.length > 0;
+    foodElements.sendAllToPantry.disabled = activeEntries.length === 0;
+    foodElements.myPantryTabCount.textContent = pantryEntries.length.toLocaleString();
+    foodElements.myFoodsTabCount.textContent = activeEntries.length.toLocaleString();
+    const pantryTab = foodElements.sourceTabs.find(button => button.dataset.foodSourceTab === "pantry");
+    const activeTab = foodElements.sourceTabs.find(button => button.dataset.foodSourceTab === "saved");
+    pantryTab?.setAttribute("aria-label", `My Pantry, ${pantryEntries.length} saved ${pantryEntries.length === 1 ? "food" : "foods"}`);
+    activeTab?.setAttribute("aria-label", `My Foods, ${activeEntries.length} active ${activeEntries.length === 1 ? "food" : "foods"}`);
+    renderSavedFoodGroups(foodElements.myPantryList, pantryEntries, "pantry");
+    renderSavedFoodGroups(foodElements.myFoodsList, activeEntries, "active");
+}
+
+
+function renderSavedFoodGroups(container, savedEntries, location) {
+    const groups = [
+        ["protein", "Protein-forward"],
+        ["carbs", "Carbohydrate-forward"],
+        ["fats", "Fat-forward"],
+        ["mixed", "Mixed"]
+    ];
+    container.replaceChildren(...groups.flatMap(([key, label]) => {
+        const entries = savedEntries.filter(entry => savedFoodMacroGroup(entry.food) === key);
+        if (!entries.length) return [];
+        const section = document.createElement("section");
+        section.className = "my-foods-group";
+        section.dataset.macroGroup = key;
+        const heading = document.createElement("h4");
+        const headingLabel = document.createElement("span");
+        headingLabel.textContent = label;
+        const headingCount = document.createElement("small");
+        headingCount.textContent = `${entries.length} ${entries.length === 1 ? "food" : "foods"}`;
+        heading.append(headingLabel, headingCount);
+        const grid = document.createElement("div");
+        grid.className = "my-foods-group-grid";
+        grid.append(...entries.map(entry => usdaResultCard(entry.food, { location })));
+        section.append(heading, grid);
+        return [section];
+    }));
+}
+
+
+function savedFoodMacroGroup(item) {
+    const energy = {
+        protein: Math.max(0, Number(item.estimate?.protein) || 0) * 4,
+        carbs: Math.max(0, Number(item.estimate?.carbs) || 0) * 4,
+        fats: Math.max(0, Number(item.estimate?.fats) || 0) * 9
+    };
+    const ranked = Object.entries(energy).sort((a, b) => b[1] - a[1]);
+    const total = ranked.reduce((sum, [, value]) => sum + value, 0);
+    if (!total || ranked[0][1] / total < 0.45 || (ranked[0][1] - ranked[1][1]) / total < 0.1) return "mixed";
+    return ranked[0][0];
+}
+
+
+function usdaResultCard(item, { location = "search" } = {}) {
+    const savedEntry = savedUsdaEntry(item.id);
+    const selectedLine = foodExperience.lines.find(line => line.foodId === item.id);
+    const selectedQuantity = selectedLine?.quantity || 0;
+    const card = document.createElement("article");
+    card.className = "usda-result-card";
+    card.classList.toggle("is-selected", selectedQuantity > 0);
+    card.dataset.foodId = item.id;
+
+    const copy = document.createElement("div");
+    copy.className = "usda-result-copy";
+    const name = document.createElement("strong");
+    name.textContent = item.name;
+    const portion = document.createElement("span");
+    portion.textContent = displayFoodPortion(item);
+    const source = document.createElement("small");
+    source.textContent = `${item.dataType} · USDA FoodData Central`;
+    copy.append(name, portion, source);
+
+    const actions = document.createElement("div");
+    actions.className = "usda-card-actions";
+
+    if (location === "search") {
+        const save = document.createElement("button");
+        save.type = "button";
+        save.className = "save-pantry-food";
+        save.textContent = savedEntry ? "In My Pantry" : "Add to Pantry";
+        save.disabled = Boolean(savedEntry);
+        save.setAttribute("aria-label", savedEntry
+            ? `${item.name} is already saved in My Pantry`
+            : `Add ${item.name} to My Pantry`);
+        save.addEventListener("click", () => addFoodToPantry(item));
+        actions.append(save);
+        card.append(copy, actions);
+        return card;
+    }
+
+    const displayedQuantity = location === "pantry"
+        ? savedEntry?.lastQuantity || 1
+        : selectedQuantity;
+    const stepper = document.createElement("div");
+    stepper.className = "catalog-portion-stepper usda-portion-stepper";
+    stepper.setAttribute("role", "group");
+    stepper.setAttribute("aria-label", `${item.name} portion quantity`);
+    const decrease = document.createElement("button");
+    decrease.type = "button";
+    decrease.className = "catalog-portion-decrease";
+    decrease.textContent = "−";
+    decrease.disabled = displayedQuantity <= 1;
+    decrease.setAttribute("aria-label", `Decrease the remembered portion of ${item.name}`);
+    decrease.addEventListener("click", () => location === "pantry"
+        ? adjustPantryQuantity(item.id, -1)
+        : changeFoodQuantity(item.id, -1));
+    const quantity = document.createElement("output");
+    quantity.className = "catalog-portion-count";
+    quantity.textContent = formatPortionQuantity(displayedQuantity);
+    quantity.setAttribute("aria-label", `${item.name} portion quantity ${displayedQuantity}`);
+    const increase = document.createElement("button");
+    increase.type = "button";
+    increase.className = "catalog-portion-increase";
+    increase.textContent = "+";
+    increase.setAttribute("aria-label", `Add one portion of ${item.name}`);
+    increase.addEventListener("click", () => location === "pantry"
+        ? adjustPantryQuantity(item.id, 1)
+        : addUsdaFood(item));
+    stepper.append(decrease, quantity, increase);
+    actions.append(stepper);
+
+    card.classList.add("is-saved", `is-${location}`);
+
+    const move = document.createElement("button");
+    move.type = "button";
+    move.className = "move-saved-food";
+    move.textContent = location === "pantry" ? "Use" : "Pantry";
+    move.setAttribute("aria-label", location === "pantry"
+        ? `Use ${item.name} in My Foods`
+        : `Return ${item.name} to My Pantry`);
+    move.addEventListener("click", () => location === "pantry"
+        ? activatePantryFood(item.id)
+        : returnFoodToPantry(item.id));
+    actions.append(move);
+
+    if (location === "pantry") {
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "remove-saved-food";
+        remove.textContent = "Remove";
+        remove.setAttribute("aria-label", `Remove ${item.name} from My Pantry`);
+        remove.addEventListener("click", () => removeSavedUsdaFood(item.id));
+        actions.append(remove);
+    }
+
+    card.append(copy, actions);
+    return card;
+}
+
+
+function renderUsdaResults() {
+    foodElements.usdaResults.replaceChildren(
+        ...foodExperience.usdaResults.map(usdaResultCard)
+    );
+}
+
+
+function addFoodToPantry(item) {
+    if (savedUsdaEntry(item.id)) return;
+    const entry = safeSavedUsdaEntry({ food: item, quantity: 0, lastQuantity: 1 });
+    if (!entry) return;
+    foodExperience.savedUsdaFoods.unshift(entry);
+    persistMyFoods();
+    renderUsdaResults();
+    renderMyFoods();
+    foodElements.browserStatus.textContent = `${item.name} added to My Pantry.`;
+}
+
+
+function adjustPantryQuantity(foodId, delta) {
+    const entry = savedUsdaEntry(foodId);
+    if (!entry || entry.quantity > 0) return;
+    entry.lastQuantity = Math.max(1, Math.round(entry.lastQuantity + delta));
+    persistMyFoods();
+    renderMyFoods();
+}
+
+
+function activatePantryFood(foodId) {
+    const entry = savedUsdaEntry(foodId);
+    if (!entry || entry.quantity > 0) return;
+    entry.quantity = Math.max(1, entry.lastQuantity || 1);
+    foodExperience.lines.push({
+        foodId,
+        quantity: entry.quantity,
+        food: { ...entry.food, estimate: { ...entry.food.estimate } }
+    });
+    foodExperience.dayKind = "custom";
+    foodExperience.lastChange = { type: "food-add", foodId };
+    setFoodSource("foods");
+    syncSavedUsdaQuantities();
+    refreshFoodExperience();
+    foodElements.browserStatus.textContent = `${entry.food.name} moved into My Foods and is now shaping the hero.`;
+}
+
+
+function returnFoodToPantry(foodId) {
+    const entry = savedUsdaEntry(foodId);
+    const line = foodExperience.lines.find(item => item.foodId === foodId);
+    if (!entry || !line) return;
+    entry.lastQuantity = Math.max(1, line.quantity);
+    foodExperience.lines = foodExperience.lines.filter(item => item.foodId !== foodId);
+    entry.quantity = 0;
+    foodExperience.dayKind = foodExperience.lines.length ? "custom" : "empty";
+    foodExperience.lastChange = { type: "food-remove", foodId };
+    setFoodSource("foods");
+    persistMyFoods();
+    refreshFoodExperience();
+    foodElements.browserStatus.textContent = `${entry.food.name} returned to My Pantry. Its portion was remembered.`;
+}
+
+
+function sendAllFoodsToPantry() {
+    const activeEntries = foodExperience.savedUsdaFoods.filter(entry => entry.quantity > 0);
+    if (!activeEntries.length) return;
+
+    const activeIds = new Set(activeEntries.map(entry => entry.food.id));
+    activeEntries.forEach(entry => {
+        const line = foodExperience.lines.find(item => item.foodId === entry.food.id);
+        entry.lastQuantity = Math.max(1, Number(line?.quantity) || entry.quantity || entry.lastQuantity || 1);
+        entry.quantity = 0;
+    });
+    foodExperience.lines = foodExperience.lines.filter(line => !activeIds.has(line.foodId));
+    foodExperience.dayKind = foodExperience.lines.length ? "custom" : "empty";
+    foodExperience.lastChange = { type: "food-remove" };
+    setFoodSource("foods");
+    persistMyFoods();
+    refreshFoodExperience();
+    foodElements.browserStatus.textContent = `${activeEntries.length} ${activeEntries.length === 1 ? "food was" : "foods were"} returned to My Pantry. Their portions were remembered.`;
+}
+
+
+function removeSavedUsdaFood(foodId) {
+    const index = foodExperience.savedUsdaFoods.findIndex(entry => entry.food.id === foodId);
+    if (index < 0) return;
+
+    foodExperience.lastRemovedSavedFood = {
+        entry: foodExperience.savedUsdaFoods[index],
+        index
+    };
+    const name = foodExperience.savedUsdaFoods[index].food.name;
+    foodExperience.savedUsdaFoods.splice(index, 1);
+    foodExperience.lines = foodExperience.lines.filter(line => line.foodId !== foodId);
+    foodElements.undoSavedFood.hidden = false;
+    foodElements.browserStatus.textContent = `${name} removed from My Pantry. Undo is available.`;
+    foodExperience.dayKind = foodExperience.lines.length ? "custom" : "empty";
+    foodExperience.lastChange = { type: "food-remove", foodId };
+    persistMyFoods();
+    setFoodSource("foods");
+    refreshFoodExperience();
+}
+
+
+function addUsdaFood(item) {
+    const existing = foodExperience.lines.find(line => line.foodId === item.id);
+    if (existing) {
+        existing.quantity += 1;
+    } else {
+        foodExperience.lines.push({
+            foodId: item.id,
+            quantity: 1,
+            food: {
+                ...item,
+                estimate: { ...item.estimate }
+            }
+        });
+    }
+
+    const quantity = foodExperience.lines.find(line => line.foodId === item.id)?.quantity || 1;
+    saveUsdaFood(item, quantity);
+
+    foodExperience.dayKind = "custom";
+    foodExperience.lastChange = { type: "food-add", foodId: item.id };
+    foodExperience.experimentUndo = null;
+    foodElements.browserStatus.textContent =
+        `${item.name} increased in My Foods.`;
+    setFoodSource("foods");
+    refreshFoodExperience();
+}
+
+
+let usdaSearchTimer = null;
+let usdaSearchSequence = 0;
+
+function resetUsdaSearch() {
+    window.clearTimeout(usdaSearchTimer);
+    usdaSearchSequence += 1;
+    foodExperience.usdaResults = [];
+    foodElements.usdaResults.replaceChildren();
+    foodElements.usdaForm.classList.remove("is-searching");
+}
+
+async function runUsdaSearch(query) {
+    const sequence = ++usdaSearchSequence;
+    if (query.length < 2) {
+        resetUsdaSearch();
+        foodElements.usdaState.textContent = query
+            ? "Enter one more letter to start searching."
+            : "Start typing to find a food.";
+        return;
+    }
+
+    foodElements.usdaForm.classList.add("is-searching");
+    foodElements.usdaState.textContent = `Searching the local USDA foods for “${query}”…`;
+    foodElements.usdaResults.replaceChildren();
+    try {
+        foodExperience.usdaResults = await searchUsdaFoods(query);
+        if (sequence !== usdaSearchSequence) return;
+        renderUsdaResults();
+        foodElements.usdaState.textContent = foodExperience.usdaResults.length
+            ? `${foodExperience.usdaResults.length} approximate matches. Choose the closest familiar description.`
+            : `No useful matches found for “${query}”. Try a simpler food name.`;
+    } catch (error) {
+        if (sequence !== usdaSearchSequence) return;
+        foodExperience.usdaResults = [];
+        foodElements.usdaState.textContent = error.message ||
+            "USDA food search could not be reached.";
+    } finally {
+        if (sequence === usdaSearchSequence) {
+            foodElements.usdaForm.classList.remove("is-searching");
+        }
+    }
+}
+
+function submitUsdaSearch(event) {
+    event.preventDefault();
+    window.clearTimeout(usdaSearchTimer);
+    runUsdaSearch(foodElements.usdaInput.value.trim());
+}
+
+function queueUsdaSearch() {
+    const query = foodElements.usdaInput.value.trim();
+    foodElements.usdaClear.hidden = !query;
+    window.clearTimeout(usdaSearchTimer);
+
+    if (query.length < 2) {
+        runUsdaSearch(query);
+        return;
+    }
+
+    foodElements.usdaState.textContent = "Keep typing, or pause to see matches.";
+    usdaSearchTimer = window.setTimeout(() => runUsdaSearch(query), 250);
+}
+
+function clearUsdaSearch() {
+    foodElements.usdaInput.value = "";
+    foodElements.usdaClear.hidden = true;
+    resetUsdaSearch();
+    foodElements.usdaState.textContent = "Start typing to find a food.";
+    foodElements.usdaInput.focus();
+}
+
+
 function syncFoodTileSelections() {
     foodElements.grid.querySelectorAll(".food-tile-wrap").forEach(wrapper => {
-        const item = catalogById[wrapper.dataset.foodId];
+        const item = foodItem(wrapper.dataset.foodId);
         const line = foodExperience.lines.find(entry => entry.foodId === wrapper.dataset.foodId);
         const quantity = line?.quantity || 0;
         const selected = quantity > 0;
@@ -997,8 +1583,20 @@ function syncFoodTileSelections() {
 }
 
 
+function displayFoodPortion(item) {
+    const portion = String(item?.portion || "").trim();
+    const portionGrams = Number(item?.portionGrams) || 0;
+    const isGenericUsdaReference = item?.source === "usda"
+        && Math.abs(portionGrams - 100) < 0.1
+        && /^100 g reference portion$/i.test(portion);
+    return isGenericUsdaReference
+        ? "≈ 3½ oz · USDA 100 g"
+        : portion || "Representative portion";
+}
+
+
 function createTrayRow(line, displayQuantity = line.quantity) {
-    const item = catalogById[line.foodId];
+    const item = foodItem(line.foodId);
     const row = document.createElement("article");
     row.className = "tray-row";
     row.dataset.foodId = item.id;
@@ -1077,7 +1675,7 @@ function renderCustomDay() {
     chips.setAttribute("aria-label", "Foods in this partial day");
     foodExperience.lines.forEach(line => {
         const chip = document.createElement("span");
-        chip.textContent = `${catalogById[line.foodId].name} · ${formatPortionQuantity(line.quantity)}×`;
+        chip.textContent = `${foodItem(line.foodId).name} · ${formatPortionQuantity(line.quantity)}×`;
         chips.append(chip);
     });
 
@@ -1101,8 +1699,8 @@ function renderTray() {
     foodElements.tray.hidden = empty;
     foodElements.trayEmpty.hidden = !empty;
     foodElements.clearDay.disabled = empty;
-    foodElements.clearFoods.classList.toggle("is-inactive", empty);
-    foodElements.clearFoods.setAttribute("aria-disabled", String(empty));
+    const familiarCount = foodExperience.lines.filter(line => line.food?.source !== "usda").length;
+    foodElements.resetFamiliarFoods.disabled = familiarCount === 0;
     updateEstimatedFoodEnergy();
     foodElements.loadExample.classList.toggle("active", foodExperience.dayKind === "example");
     foodElements.loadExample.setAttribute("aria-pressed", String(foodExperience.dayKind === "example"));
@@ -1156,7 +1754,7 @@ function snapshotExperimentState() {
 
 
 function renderNarration(state) {
-    const item = catalogById[foodExperience.lastChange?.foodId];
+    const item = foodItem(foodExperience.lastChange?.foodId);
     const activity = getActivityProfile(controls.activity.value);
     const horizon = getHorizonPeriod(controls.time.value);
     const narration = buildNarration({
@@ -1204,6 +1802,8 @@ function refreshFoodExperience({ syncControls = true } = {}) {
     setFoodSource(foodExperience.source);
     renderTray();
     syncFoodTileSelections();
+    renderMyFoods();
+    renderUsdaResults();
 
     if (syncControls && foodExperience.source === "foods") {
         syncFoodTotalsToControls();
@@ -1214,7 +1814,7 @@ function refreshFoodExperience({ syncControls = true } = {}) {
 
 
 function addFood(foodId) {
-    const item = catalogById[foodId];
+    const item = foodItem(foodId);
     if (!item) return;
 
     const existing = foodExperience.lines.find(line => line.foodId === foodId);
@@ -1229,7 +1829,6 @@ function addFood(foodId) {
     foodExperience.lastChange = { type: "food-add", foodId };
     foodExperience.experimentUndo = null;
     setFoodSource("foods");
-    foodElements.undoClear.hidden = true;
     foodElements.browserStatus.textContent = `${item.name} added. ${foodExperience.lines.length} ${foodExperience.lines.length === 1 ? "food" : "foods"} selected.`;
     refreshFoodExperience();
 }
@@ -1260,6 +1859,8 @@ function changeFoodQuantity(foodId, delta) {
         foodExperience.lines = foodExperience.lines.filter(entry => entry.foodId !== foodId);
     }
 
+    syncSavedUsdaQuantities();
+
     foodExperience.dayKind = foodExperience.lines.length ? "custom" : "empty";
     foodExperience.lastChange = {
         type: delta > 0 ? "food-increase" : "food-decrease",
@@ -1273,6 +1874,7 @@ function changeFoodQuantity(foodId, delta) {
 
 function removeFood(foodId) {
     foodExperience.lines = foodExperience.lines.filter(line => line.foodId !== foodId);
+    syncSavedUsdaQuantities();
     foodExperience.dayKind = foodExperience.lines.length ? "custom" : "empty";
     foodExperience.lastChange = { type: "food-remove", foodId };
     foodExperience.experimentUndo = null;
@@ -1281,28 +1883,26 @@ function removeFood(foodId) {
 }
 
 
-function clearFoodDay() {
-    if (!foodExperience.lines.length) return;
-
-    foodExperience.lastClearedLines = cloneLines(foodExperience.lines);
-    foodExperience.lines = [];
-    foodExperience.dayKind = "empty";
-    foodExperience.lastChange = { type: "empty" };
+function resetFamiliarFoods() {
+    const familiarLines = foodExperience.lines.filter(line => line.food?.source !== "usda");
+    if (!familiarLines.length) return;
+    foodExperience.lines = foodExperience.lines.filter(line => line.food?.source === "usda");
+    syncSavedUsdaQuantities();
+    foodExperience.dayKind = foodExperience.lines.length ? "custom" : "empty";
+    foodExperience.lastChange = { type: "food-remove" };
     foodExperience.experimentUndo = null;
-    foodElements.undoClear.hidden = false;
     setFoodSource("foods");
     refreshFoodExperience();
-    foodElements.browserStatus.textContent = "All selected foods cleared. Undo is available.";
+    foodElements.browserStatus.textContent = "Familiar Foods reset. My Pantry and My Foods were not changed.";
 }
 
 
 function loadFamiliarMealsExample() {
     foodExperience.lines = createExampleDay();
+    syncSavedUsdaQuantities();
     foodExperience.dayKind = "example";
     foodExperience.lastChange = { type: "example" };
-    foodExperience.lastClearedLines = null;
     foodExperience.experimentUndo = null;
-    foodElements.undoClear.hidden = true;
     controls.activity.value = 1;
     controls.time.value = 0;
     setFoodSource("foods");
@@ -1323,6 +1923,9 @@ function renderEmptyModelState() {
         "Add a food below to bring the fuel pathways to life.";
     ["Protein", "Carbs", "Fats"].forEach(name => {
         document.getElementById(`stage${name}Value`).textContent = "Tap to learn";
+        const total = document.getElementById(`stage${name}Total`);
+        total.textContent = "≈ 0 g";
+        total.setAttribute("aria-label", `Estimated ${macroLabels[name.toLowerCase()] || name} total 0 grams`);
     });
 
     ["fuel", "glycogen", "muscle", "repair", "fatUse", "storage"].forEach(id => {
@@ -1332,7 +1935,7 @@ function renderEmptyModelState() {
         const destination = document.getElementById(
             `destination${id.charAt(0).toUpperCase()}${id.slice(1)}Value`
         );
-        if (destination) destination.textContent = "—";
+        if (destination) setResponseDial(destination, 0, { empty: true });
     });
 
     updateTechnicalTotals(foodTotals());
@@ -1358,33 +1961,14 @@ function calculate() {
     document.querySelector(".body-stage").classList.remove("is-empty");
     document.querySelector(".body-stage").classList.add("has-foods");
 
-    const totals = foodExperience.source === "foods"
-        ? foodTotals()
-        : {
-            protein: Number(controls.protein.value),
-            carbs: Number(controls.carbs.value),
-            fats: Number(controls.fats.value),
-            calories: calculateMacroCalories({
-                protein: Number(controls.protein.value),
-                carbs: Number(controls.carbs.value),
-                fats: Number(controls.fats.value)
-            })
-        };
+    const fuelInput = currentFuelInput();
+    const totals = fuelInput.nutrients;
+    const { protein, carbs, fats } = totals;
+    const activity = fuelInput.context.activity;
+    const time = fuelInput.context.timeline;
+    const state = calculateBodyState(toModelInput(fuelInput));
 
-    const protein = totals.protein;
-    const carbs = totals.carbs;
-    const fats = totals.fats;
-
-    const activity = Number(controls.activity.value);
-    const time = Number(controls.time.value);
-
-    const state = calculateBodyState({
-        protein,
-        carbs,
-        fats,
-        activity,
-        time
-    });
+    state.fuelInput = fuelInput;
 
     foodExperience.currentState = state;
     updateTechnicalTotals(totals);
@@ -1475,6 +2059,23 @@ function updateText(
                 ? "Larger share of today’s mix"
                 : "Present in today’s mix";
         document.getElementById(`stage${name}Value`).textContent = label;
+    });
+
+    const macroTotals = {
+        Protein: protein,
+        Carbs: carbs,
+        Fats: fats
+    };
+    const accessibleNames = {
+        Protein: "protein",
+        Carbs: "carbohydrate",
+        Fats: "fat"
+    };
+    Object.entries(macroTotals).forEach(([name, grams]) => {
+        const rounded = Math.round(grams);
+        const total = document.getElementById(`stage${name}Total`);
+        total.textContent = `≈ ${rounded.toLocaleString()} g`;
+        total.setAttribute("aria-label", `Estimated ${accessibleNames[name]} total ${rounded.toLocaleString()} grams`);
     });
 
     controls.protein.setAttribute(
@@ -1588,8 +2189,21 @@ function updateOutput(id, value) {
         );
 
     if (destinationValue) {
-        destinationValue.textContent = `${rounded}%`;
+        setResponseDial(destinationValue, rounded);
     }
+}
+
+
+function setResponseDial(element, value, { empty = false } = {}) {
+    if (!element) return;
+    const level = Math.max(0, Math.min(100, Number(value) || 0));
+    const label = level < 34 ? "lower" : level < 67 ? "moderate" : "higher";
+    element.style.setProperty("--dial-angle", `${-110 + level * 2.2}deg`);
+    element.dataset.emphasis = empty ? "empty" : label;
+    element.setAttribute(
+        "aria-label",
+        empty ? "Relative emphasis not yet modeled" : `Relative model emphasis: ${label}`
+    );
 }
 
 
@@ -1795,6 +2409,7 @@ function updateVisuals(state) {
 
             if (card) {
                 card.style.setProperty("--signal", (cardSignal / 100).toFixed(2));
+                setResponseDial(card.querySelector(".response-dial"), cardSignal);
                 card.classList.toggle(
                     "is-prioritized",
                     cardSignal >= 68
@@ -2247,22 +2862,48 @@ document
 
 
 foodElements.loadExample.addEventListener("click", loadFamiliarMealsExample);
-foodElements.clearStart.addEventListener("click", clearFoodDay);
-foodElements.clearDay.addEventListener("click", clearFoodDay);
-foodElements.clearFoods.addEventListener("click", clearFoodDay);
+foodElements.clearStart.addEventListener("click", resetFamiliarFoods);
+foodElements.clearDay.addEventListener("click", resetFamiliarFoods);
+foodElements.resetFamiliarFoods.addEventListener("click", resetFamiliarFoods);
+foodElements.sourceTabs.forEach(button => {
+    button.addEventListener("click", () => {
+        setFoodBrowserSource(button.dataset.foodSourceTab, { focus: true });
+    });
+    button.addEventListener("keydown", event => {
+        if (!["ArrowLeft", "ArrowRight"].includes(event.key)) return;
+        event.preventDefault();
+        const tabs = foodElements.sourceTabs;
+        const current = tabs.indexOf(button);
+        const direction = event.key === "ArrowRight" ? 1 : -1;
+        setFoodBrowserSource(tabs[(current + direction + tabs.length) % tabs.length].dataset.foodSourceTab, { focus: true });
+    });
+});
+foodElements.usdaForm.addEventListener("submit", submitUsdaSearch);
+foodElements.usdaInput.addEventListener("input", queueUsdaSearch);
+foodElements.usdaClear.addEventListener("click", clearUsdaSearch);
+foodElements.sendAllToPantry.addEventListener("click", sendAllFoodsToPantry);
+foodElements.undoSavedFood.addEventListener("click", () => {
+    const removed = foodExperience.lastRemovedSavedFood;
+    if (!removed) return;
 
-foodElements.undoClear.addEventListener("click", () => {
-    if (!foodExperience.lastClearedLines) return;
-
-    foodExperience.lines = cloneLines(foodExperience.lastClearedLines);
-    foodExperience.lastClearedLines = null;
-    foodExperience.dayKind = "custom";
-    foodExperience.lastChange = { type: "food-restore" };
-    foodElements.undoClear.hidden = true;
+    foodExperience.savedUsdaFoods.splice(removed.index, 0, removed.entry);
+    if (removed.entry.quantity > 0) {
+        foodExperience.lines.push({
+            foodId: removed.entry.food.id,
+            quantity: removed.entry.quantity,
+            food: {
+                ...removed.entry.food,
+                estimate: { ...removed.entry.food.estimate }
+            }
+        });
+    }
+    foodExperience.lastRemovedSavedFood = null;
+    foodElements.undoSavedFood.hidden = true;
+    persistMyFoods();
     setFoodSource("foods");
     refreshFoodExperience();
-    foodElements.browserStatus.textContent = "Previous food selections restored.";
-    foodElements.clearFoods.focus();
+    foodElements.browserStatus.textContent = "Food restored to My Foods.";
+    foodElements.myPantryList.querySelector("button")?.focus();
 });
 
 foodElements.useFoodEstimates.addEventListener("click", () => {
@@ -2359,6 +3000,8 @@ function openCoreExplanation(trigger) {
     if (!explanation) return;
 
     coreElements.activeExplanationTrigger = trigger;
+    hideInfoPopover();
+    trigger.setAttribute("aria-expanded", "true");
     coreElements.dialogTitle.textContent = explanation.title;
     coreElements.dialogBody.textContent = explanation.body;
     coreElements.dialogDetails.hidden = !explanation.details?.length;
@@ -2412,6 +3055,7 @@ document.addEventListener("keydown", event => {
 
 coreElements.dialogClose.addEventListener("click", closeCoreExplanation);
 coreElements.dialog.addEventListener("close", () => {
+    coreElements.activeExplanationTrigger?.setAttribute("aria-expanded", "false");
     coreElements.activeExplanationTrigger?.focus();
     coreElements.activeExplanationTrigger = null;
 });
@@ -2606,7 +3250,7 @@ function hideInfoPopover({ restoreFocus = false } = {}) {
 
 
 document
-    .querySelectorAll(".info-button")
+    .querySelectorAll(".info-button:not(.core-info-button)")
     .forEach(button => {
 
         button.setAttribute("aria-expanded", "false");
@@ -3219,14 +3863,21 @@ window.BodyFuelExplorerGuideBridge = Object.freeze({
         return {
             explorer: createExplorerSnapshot(),
             foodLines: cloneLines(foodExperience.lines),
+            savedUsdaFoods: foodExperience.savedUsdaFoods.map(entry => ({
+                food: { ...entry.food, estimate: { ...entry.food.estimate } },
+                quantity: entry.quantity,
+                lastQuantity: entry.lastQuantity
+            })),
+            usdaQuery: foodElements.usdaInput.value,
+            usdaResults: foodExperience.usdaResults.map(item => ({
+                ...item,
+                estimate: { ...item.estimate }
+            })),
             filter: foodExperience.filter,
+            browserSource: foodExperience.browserSource,
             scrollTop: foodElements.grid.scrollTop,
             dayKind: foodExperience.dayKind,
             source: foodExperience.source,
-            lastClearedLines: foodExperience.lastClearedLines
-                ? cloneLines(foodExperience.lastClearedLines)
-                : null,
-            undoClearHidden: foodElements.undoClear.hidden,
             browserStatus: foodElements.browserStatus.textContent
         };
     },
@@ -3236,16 +3887,26 @@ window.BodyFuelExplorerGuideBridge = Object.freeze({
 
         const explorer = snapshot.explorer;
         foodExperience.lines = cloneLines(snapshot.foodLines || []);
+        if (Array.isArray(snapshot.savedUsdaFoods)) {
+            foodExperience.savedUsdaFoods = snapshot.savedUsdaFoods
+                .map(entry => safeSavedUsdaEntry(entry))
+                .filter(Boolean);
+        }
+        foodExperience.usdaResults = Array.isArray(snapshot.usdaResults)
+            ? snapshot.usdaResults.map(item => ({ ...item, estimate: { ...item.estimate } }))
+            : [];
+        foodElements.usdaInput.value = String(snapshot.usdaQuery || "");
+        foodElements.usdaClear.hidden = !foodElements.usdaInput.value;
         foodExperience.filter = foodCategories.some(category =>
             category.id === snapshot.filter && category.id !== "all"
         ) ? snapshot.filter : "breakfast";
+        foodExperience.browserSource = ["usda", "pantry", "saved"].includes(snapshot.browserSource)
+            ? snapshot.browserSource
+            : "familiar";
         foodExperience.dayKind = ["example", "custom", "empty"].includes(snapshot.dayKind)
             ? snapshot.dayKind
             : (foodExperience.lines.length ? "custom" : "empty");
         foodExperience.source = explorer.foodSource === "manual" ? "manual" : "foods";
-        foodExperience.lastClearedLines = snapshot.lastClearedLines
-            ? cloneLines(snapshot.lastClearedLines)
-            : null;
         foodExperience.experimentUndo = null;
         foodExperience.lastChange = { type: "guide-restore" };
 
@@ -3266,12 +3927,15 @@ window.BodyFuelExplorerGuideBridge = Object.freeze({
         setFlowMotionPaused(explorer.flowMotionPaused === true);
 
         renderFoodBrowser();
-        foodElements.undoClear.hidden = snapshot.undoClearHidden !== false;
+        renderMyFoods();
+        renderUsdaResults();
+        setFoodBrowserSource(foodExperience.browserSource, { persist: false });
         foodElements.browserStatus.textContent = snapshot.browserStatus || "";
         setFoodSource(foodExperience.source);
         renderTray();
         if (foodExperience.source === "foods") syncFoodTotalsToControls();
         calculate();
+        persistMyFoods();
 
         window.requestAnimationFrame(() => {
             foodElements.grid.scrollTop = Number(snapshot.scrollTop) || 0;
@@ -3284,7 +3948,9 @@ window.BodyFuelExplorerGuideBridge = Object.freeze({
             .filter(entry => catalogById[entry.foodId] && Number(entry.quantity) > 0);
         foodExperience.dayKind = foodExperience.lines.length ? "custom" : "empty";
         foodExperience.source = "foods";
-        foodExperience.lastClearedLines = null;
+        if (!options.preserveBrowser) {
+            foodExperience.browserSource = "familiar";
+        }
         foodExperience.experimentUndo = null;
         foodExperience.lastChange = { type: "guide-scenario" };
         controls.activity.value = fixedActivityContext.index;
@@ -3292,48 +3958,34 @@ window.BodyFuelExplorerGuideBridge = Object.freeze({
         if (options.filter && foodCategories.some(category => category.id === options.filter)) {
             foodExperience.filter = options.filter;
         }
-        foodElements.undoClear.hidden = true;
         renderFoodBrowser();
         refreshFoodExperience();
-        foodElements.grid.scrollTop = 0;
-    },
-
-    clearLesson() {
-        foodExperience.lines = [];
-        foodExperience.filter = "breakfast";
-        foodExperience.dayKind = "empty";
-        foodExperience.source = "foods";
-        foodExperience.lastClearedLines = null;
-        foodExperience.experimentUndo = null;
-        foodExperience.lastChange = { type: "empty" };
-        controls.activity.value = fixedActivityContext.index;
-        controls.time.value = "0";
-        foodElements.undoClear.hidden = true;
-        renderFoodBrowser();
-        refreshFoodExperience();
-        foodElements.browserStatus.textContent =
-            "Lesson cleared. Add a food when you are ready to build a modeled day.";
-    },
-
-    revealFood(foodId) {
-        const item = catalogById[foodId];
-        if (!item) return null;
-        const category = item.groups.find(group => group !== "all") || "breakfast";
-        if (foodExperience.filter !== category) {
-            foodExperience.filter = category;
-            renderFoodBrowser();
+        if (!options.preserveBrowser) {
+            foodElements.grid.scrollTop = 0;
         }
-        const wrapper = foodElements.grid.querySelector(`[data-food-id="${foodId}"]`);
-        if (wrapper) {
-            const rowTop = Math.max(0, wrapper.offsetTop - foodElements.grid.offsetTop);
-            foodElements.grid.scrollTop = rowTop;
-        }
-        persistExplorerSnapshot();
-        return wrapper?.querySelector(".catalog-portion-increase") || null;
     },
 
-    getQuantity(foodId) {
-        return Number(foodExperience.lines.find(entry => entry.foodId === foodId)?.quantity || 0);
+    showFoodBrowser(source) {
+        setFoodBrowserSource(source, { focus: false });
+    },
+
+    async prepareFoodFlowSearch() {
+        setFoodBrowserSource("usda", { focus: false });
+        const queries = ["banana", "lentils", "oats", "salmon", "yogurt"];
+        for (const query of queries) {
+            foodElements.usdaInput.value = query;
+            foodElements.usdaClear.hidden = false;
+            await runUsdaSearch(query);
+            const item = foodExperience.usdaResults.find(result => !savedUsdaEntry(result.id));
+            if (item) return { id: item.id, name: item.name };
+        }
+        return null;
+    },
+
+    getSavedLocation(foodId) {
+        const entry = savedUsdaEntry(foodId);
+        if (!entry) return "search";
+        return entry.quantity > 0 ? "active" : "pantry";
     },
 
     getState() {
@@ -3352,8 +4004,9 @@ window.BodyFuelExplorerGuideBridge = Object.freeze({
 });
 
 
-const restoredExplorerSnapshot =
-    restoreExplorerSnapshot();
+restoreMyFoods();
+const restoredExplorerSnapshot = restoreExplorerSnapshot();
+syncSavedUsdaQuantities();
 
 /* Everyday Movement remains the fixed reference for the simplified core. */
 controls.activity.value = 1;
@@ -3497,6 +4150,9 @@ welcomeDialog.addEventListener("click", event => {
 placeCoreExperienceInReadingOrder();
 foodElements.grid.addEventListener("focusin", revealFocusedFoodRow);
 renderFoodBrowser();
+renderMyFoods();
+renderUsdaResults();
+setFoodBrowserSource(foodExperience.browserSource, { persist: false });
 setExperienceView(foodExperience.viewMode, { persist: false });
 setFoodSource(foodExperience.source);
 renderTray();
