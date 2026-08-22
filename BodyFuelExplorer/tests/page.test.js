@@ -24,9 +24,9 @@ test("core dependencies load in stable layer order", () => {
         "explanations.js?v=20260822-1",
         "app.js?v=20260822-1",
         "guide-scenarios.js?v=20260819-1",
-        "guide.js?v=20260821-6",
+        "guide.js?v=20260822-1",
         "intro.js?v=20260820-1",
-        "food-flow.js?v=20260821-1"
+        "food-flow.js?v=20260822-1"
     ];
     const positions = sources.map(source => html.indexOf(`src="${source}"`));
     positions.forEach(position => assert.ok(position >= 0));

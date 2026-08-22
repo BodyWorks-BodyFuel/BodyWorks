@@ -418,22 +418,22 @@
 
                 if (machine.step === 3) {
                     const changed = largestChangeCopy();
-                    setCopy("Watch the hero reprioritize", machine.contrastLoaded ? [
+                    setCopy("Watch the body view reprioritize", machine.contrastLoaded ? [
                         `This teaching contrast makes changes in ${changed} easier to see.`,
                         "The body, pathways, and response cards are the lesson here; food search and saved-food organization have their own My Food flow guide."
                     ] : [
-                        "Load a temporary stronger contrast and watch the hero, pathways, and response cards change together.",
+                        "Load a temporary stronger contrast and watch the body, pathways, and response cards change together.",
                         "This example is for learning the display—not a suggested eating pattern."
                     ]);
                     if (!machine.contrastLoaded) {
                         elements.next.hidden = true;
-                        actionButton("Show the hero contrast", () => {
+                        actionButton("Show the body contrast", () => {
                             bridge.loadScenario(scenarios.aboveReference.lines, {
                                 timeline: 0,
                                 preserveBrowser: true
                             });
                             machine.markContrastLoaded();
-                            announce("Hero contrast loaded in the explorer.");
+                            announce("Body contrast loaded in the explorer.");
                             renderStep();
                         }, "guide-primary-action");
                         spotlight(".routing-stage");
@@ -507,7 +507,7 @@
 
                 if (machine.step === 7) {
                     setCopy("Now make the explorer yours", [
-                        "Foods + visible model context + repeated timeline = changing hero priorities.",
+                        "Foods + visible model context + repeated timeline = changing model priorities.",
                         "Restore what you had before the tour, or keep the temporary teaching example."
                     ]);
                     elements.back.hidden = false;

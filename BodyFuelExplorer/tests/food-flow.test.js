@@ -26,10 +26,10 @@ test("learning links form a visible, named queue", () => {
 });
 
 
-test("food-flow overview explains the shelf-to-hero path", () => {
+test("food-flow overview explains the shelf-to-body path", () => {
     assert.match(html, /id="foodFlowIntro"/);
     assert.match(html, /How My Foods Works/);
-    assert.match(html, /Find My Food[\s\S]*?My Pantry[\s\S]*?My Foods[\s\S]*?Hero responds/);
+    assert.match(html, /Find My Food[\s\S]*?My Pantry[\s\S]*?My Foods[\s\S]*?Body responds/);
     assert.match(html, /Pantry means saved\. My Foods means active\./);
     assert.match(html, /id="foodFlowStartButton">Show me the food flow/);
     assert.match(html, /guided example is temporary[\s\S]*?restored when it ends/i);
@@ -59,6 +59,7 @@ test("food-flow state machine gates saving and activation", () => {
 test("guided food example uses real controls and restores the visitor's shelf", () => {
     assert.match(foodFlow, /bridge\.capture\(\)/);
     assert.match(foodFlow, /bridge\.restore\(machine\.snapshot\)/);
+    assert.match(foodFlow, /bridge\.loadScenario\(\[\], \{ timeline: 0, preserveBrowser: true \}\)/);
     assert.match(foodFlow, /prepareFoodFlowSearch\(\)/);
     assert.match(foodFlow, /\.save-pantry-food/);
     assert.match(foodFlow, /\.move-saved-food/);
@@ -69,6 +70,7 @@ test("guided food example uses real controls and restores the visitor's shelf", 
         .forEach(field => assert.match(bridge, new RegExp(field)));
     assert.match(bridge, /persistMyFoods\(\)/);
     assert.match(bridge, /getSavedLocation\(foodId\)/);
+    assert.doesNotMatch(foodFlow, /\bhero\b/i);
 });
 
 

@@ -80,8 +80,8 @@ test("completion keeps the body tour separate from food management", () => {
 });
 
 
-test("guide uses a hero-only contrast and the real Weeks gate", () => {
-    assert.match(guide, /Show the hero contrast/);
+test("guide uses a body-view contrast and the real Weeks gate", () => {
+    assert.match(guide, /Show the body contrast/);
     assert.match(guide, /machine\.markContrastLoaded\(\)/);
     assert.match(guide, /spotlight\("\.routing-stage"\)/);
     assert.match(guide, /spotlight\("\.destination-stack"\)/);
@@ -90,6 +90,7 @@ test("guide uses a hero-only contrast and the real Weeks gate", () => {
     assert.match(guide, /timeline\?\.dataset\.timeline === "2"/);
     assert.match(guide, /machine\.markWeeks\(\)/);
     assert.doesNotMatch(guide, /\.click\(\)/);
+    assert.doesNotMatch(guide, /\bhero\b/i);
 });
 
 

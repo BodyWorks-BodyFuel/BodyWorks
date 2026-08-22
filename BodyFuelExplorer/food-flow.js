@@ -168,7 +168,7 @@
 
             if (machine.step === 1) {
                 setCopy("One food, four clear places", [
-                    "Find My Food searches. My Pantry saves. My Foods activates. The hero responds only to the active pattern.",
+                    "Find My Food searches. My Pantry saves. My Foods activates. The body view responds only to the active pattern.",
                     "This temporary walkthrough will restore your Pantry and current foods when it finishes."
                 ]);
                 spotlight(".food-source-tabs");
@@ -176,7 +176,7 @@
 
             if (machine.step === 2) {
                 setCopy("Start with Find My Food", [
-                    "We’ll load one ordinary USDA example so you can follow it through the complete shelf-to-hero path."
+                    "We’ll load one ordinary USDA example so you can follow it through the complete shelf-to-body path."
                 ]);
                 actionButton("Open a sample search", async () => {
                     elements.status.textContent = "Finding an available example…";
@@ -195,7 +195,7 @@
             if (machine.step === 3) {
                 setCopy("Save it to My Pantry", [
                     `${machine.demoFood.name} is only a search result right now. Press its real “Add to Pantry” button.`,
-                    "Saving a food does not change the hero. It simply puts the food on your reusable shelf."
+                    "Saving a food does not change the body view. It simply puts the food on your reusable shelf."
                 ]);
                 elements.status.textContent = "Waiting for Add to Pantry…";
                 spotlight(selectorForFood(machine.demoFood.id, " .save-pantry-food"));
@@ -204,7 +204,7 @@
             if (machine.step === 4) {
                 bridge.showFoodBrowser("pantry");
                 setCopy("Use it from My Pantry", [
-                    "The food is now saved on this device, but it still is not shaping the hero.",
+                    "The food is now saved on this device, but it is not yet shaping the body view.",
                     "Press its real “Use” button to move the remembered portion into My Foods."
                 ]);
                 elements.status.textContent = "Waiting for Use…";
@@ -221,7 +221,7 @@
             }
 
             if (machine.step === 6) {
-                setCopy("Now the hero has something to interpret", [
+                setCopy("Now the body view responds", [
                     "Energy, macro totals, pathway brightness, and body-response dials now reflect the combined foods in My Foods.",
                     "The display is a conceptual educational model—not a prediction of digestion or an individual outcome."
                 ]);
@@ -230,7 +230,7 @@
 
             if (machine.step === 7) {
                 setCopy("You now know the food flow", [
-                    "Find it → save it in My Pantry → use it in My Foods → watch the hero respond.",
+                    "Find it → save it in My Pantry → use it in My Foods → watch the body view respond.",
                     "Finishing restores the Pantry and active foods you had before this lesson."
                 ]);
                 actionButton("Finish and restore my foods", () => closeGuide());
@@ -250,6 +250,7 @@
             browserRoot.BodyFuelGuideController?.exit?.();
             guideOpener = trigger === elements.startButton ? elements.reopen : trigger;
             machine.start(bridge.capture());
+            bridge.loadScenario([], { timeline: 0, preserveBrowser: true });
             doc.body.classList.add("guide-active", "food-flow-guide-active");
             doc.documentElement.classList.add("guide-active", "food-flow-guide-active");
             elements.dimmer.hidden = false;
